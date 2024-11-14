@@ -1,0 +1,92 @@
+/* General Styling */
+body {
+    font-family: 'VT323', monospace;
+    margin: 0;
+    background-color: #000080;
+    color: #ADD8E6;
+    font-size: 1.5em;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.section {
+    padding: 40px 0;
+}
+
+/* Hero Section Styling */
+#hero {
+    text-align: center;
+    padding: 80px 0;
+}
+
+#hero h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+#hero p {
+    font-size: 1.5em;
+}
+
+/* About, Research, CV, Contact Section Styling */
+.section {
+    background-color: #0000CD;
+    border-bottom: 2px solid #ADD8E6;
+    color: #ADD8E6;
+}
+
+.section h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.research-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.research-item h3 {
+    color: #fff;
+}
+
+.download-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ADD8E6;
+    color: #000080;
+    text-decoration: none;
+    border: none;
+    font-weight: bold;
+}
+
+.contact-info {
+    text-align: center;
+}
+
+.contact-info p {
+    margin-bottom: 10px;
+}
+
+/* Footer Styling */
+footer {
+    background-color: #0000CD;
+    color: #ADD8E6;
+    text-align: center;
+    padding: 10px 0;
+    border-top: 2px solid #ADD8E6;
+}
+
+/* Specific link color for the paper */
+#research a {
+    color: #FFFFFF;
+}
+
+/* Specific link color for the advisor */
+.advisor-link a {
+    color: #FFFFFF;
+}
