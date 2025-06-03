@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,24 +32,56 @@
       color: var(--text);
       line-height: 1.8;
       transition: background 0.3s, color 0.3s;
+      position: relative;
+      min-height: 100vh;
+      padding-bottom: 80px;
     }
 
     header, footer {
       background: var(--header);
-      text-align: center;
       padding: 2rem 1rem;
       border-top: 2px solid #d0c4b3;
       border-bottom: 2px solid #d0c4b3;
     }
 
-    header h1 {
+    .header-flex {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .header-text h1 {
       font-size: 2.5rem;
       margin: 0.5rem 0;
     }
 
-    header p {
+    .header-text p {
       font-style: italic;
       color: var(--accent);
+    }
+
+    .contact-info p {
+      margin: 0.3rem 0;
+    }
+
+    .profile-pic {
+      width: 280px;
+      height: auto;
+      max-height: 100%;
+      align-self: stretch;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 3px solid var(--accent);
     }
 
     .toggle-button {
@@ -58,10 +91,20 @@
       background: var(--button-bg);
       color: var(--text);
       border: 1px solid var(--button-border);
-      padding: 0.3rem 0.7rem;
+      padding: 0.5rem 1rem;
       cursor: pointer;
-      font-size: 0.9rem;
-      border-radius: 5px;
+      font-size: 1.2rem;
+      border-radius: 9999px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toggle-button:hover {
+      background: var(--accent);
+      color: #fff;
     }
 
     main {
@@ -99,27 +142,32 @@
       text-decoration: none;
     }
 
-    .contact-info p {
-      margin: 0.3rem 0;
-    }
-
-    .profile-pic {
-      display: block;
-      margin: 1rem auto;
-      width: 160px;
-      height: 160px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--accent);
+    footer {
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <button class="toggle-button" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+  <button class="toggle-button" onclick="toggleDarkMode()"><span id="mode-label">🌞</span></button>
+
   <header>
-    <img class="profile-pic" src="788f16b6-cb0b-4319-9256-96ad4916cb15.JPG" alt="Pratik Shastri" />
-    <h1>Pratik Shastri</h1>
-    <p>Theoretical Computer Science · IMSc Chennai</p>
+    <div class="header-flex">
+      <div class="header-text">
+        <h1>Pratik Shastri</h1>
+        <p>Theoretical Computer Science · IMSc Chennai</p>
+        <div class="contact-info">
+          <p>Email: pratiks@imsc.res.in</p>
+          <p>Office Phone: (044) 2254 3239</p>
+          <p>
+            The Institute of Mathematical Sciences<br />
+            IV Cross Road, CIT Campus<br />
+            Taramani, Chennai 600 113<br />
+            Tamil Nadu, India
+          </p>
+        </div>
+      </div>
+      <img class="profile-pic" src="788f16b6-cb0b-4319-9256-96ad4916cb15.JPG" alt="Pratik Shastri" />
+    </div>
   </header>
 
   <main>
@@ -127,55 +175,45 @@
       <h2>About Me</h2>
       <p>I am a 4th year graduate student in theoretical computer science at the Institute of Mathematical Sciences, Chennai.
       My interests lie in computational complexity theory, particularly in lower bounds and Polynomial Identity Testing (PIT) in algebraic complexity theory.
-      My advisor is <a href="https://sites.google.com/cse.iitm.ac.in/c-ramya">C. Ramya</a>.</p>
+      My advisor is <a href="https://sites.google.com/cse.iitm.ac.in/c-ramya" target="_blank" rel="noopener noreferrer">C. Ramya</a>.</p>
     </section>
 
     <section id="research">
       <h2>Research</h2>
       <h3>Publications</h3>
       <ul>
-        <li><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91">Lower Bounds for Planar Arithmetic Circuits</a> – ITCS 2024, joint work with C. Ramya</li>
+        <li><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" target="_blank" rel="noopener noreferrer">Lower Bounds for Planar Arithmetic Circuits</a> – ITCS 2024, joint work with C. Ramya</li>
       </ul>
       <h3>Preprints</h3>
       <ul>
-        <li><a href="https://eccc.weizmann.ac.il/report/2025/061/">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - joint work with C. Ramya and Partha Mukhopadhyay</li>
+        <li><a href="https://eccc.weizmann.ac.il/report/2025/061/" target="_blank" rel="noopener noreferrer">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - joint work with C. Ramya and Partha Mukhopadhyay</li>
       </ul>
     </section>
 
     <section id="cv">
       <h2>Curriculum Vitae</h2>
-      <a class="download-button" href="https://drive.google.com/file/d/1OmhkTkpvgPZNVVfciPD1C9o6Lu1kumMl/view">Download CV</a>
-    </section>
-
-    <section id="contact">
-      <h2>Contact</h2>
-      <div class="contact-info">
-        <p>Email: pratiks@imsc.res.in</p>
-        <p>Office Phone: (044) 2254 3239</p>
-        <p>
-          The Institute of Mathematical Sciences<br />
-          IV Cross Road, CIT Campus<br />
-          Taramani, Chennai 600 113<br />
-          Tamil Nadu, India
-        </p>
-      </div>
+      <a class="download-button" href="https://drive.google.com/file/d/1OmhkTkpvgPZNVVfciPD1C9o6Lu1kumMl/view" target="_blank" rel="noopener noreferrer">Download CV</a>
     </section>
   </main>
 
   <footer>
-    <p>&copy; 2024 Pratik Shastri</p>
+    <p>&copy; <span id="year"></span> Pratik Shastri</p>
   </footer>
 
   <script>
     function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      const body = document.body;
+      body.classList.toggle('dark');
+      localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+      document.getElementById('mode-label').textContent = document.body.classList.contains('dark') ? '🌙' : '🌞';
     }
 
     window.onload = () => {
       if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark');
       }
+      document.getElementById('mode-label').textContent = document.body.classList.contains('dark') ? '🌙' : '🌞';
+      document.getElementById('year').textContent = new Date().getFullYear();
     };
   </script>
 </body>
