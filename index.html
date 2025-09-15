@@ -17,15 +17,13 @@
   <style>
     :root {
       /* Light Mode Palette */
-      --bg: #D6EAF8; /* Lighter Blue Edge */
-      --bg-gradient-start: #FFFFFF; /* White Center */
+      --bg: #F0F8FF; /* Very Light Blue */
       --text: #111111;
       --accent: #0077FF; /* Electric Blue */
       --border: #DDDDDD;
 
       /* Dark Mode Palette */
-      --bg-dark: #111111; /* Near-Black Edge */
-      --bg-gradient-start-dark: #0A192F; /* Deep Blue Center */
+      --bg-dark: #190729; /* Very Dark Purple */
       --text-dark: #FAFAFA;
       --border-dark: #333333;
     }
@@ -38,18 +36,16 @@
     body {
       margin: 0;
       background-color: var(--bg);
-      background-image: radial-gradient(circle, var(--bg-gradient-start), var(--bg));
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
-      transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
+      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
       min-height: 100vh;
     }
 
     body.dark {
       --bg: var(--bg-dark);
-      --bg-gradient-start: var(--bg-gradient-start-dark);
       --text: var(--text-dark);
       --border: var(--border-dark);
     }
