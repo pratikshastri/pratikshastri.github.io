@@ -6,6 +6,11 @@
   <meta name="google-site-verification" content="rgYI-jrwyNoSoAVDmS8sROqJttsfYaxbgNMSDpe_UUw" />
   <title>Pratik Shastri | Theoretical Computer Science</title>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js"></script>
+
   <style>
     :root {
       --bg: #fdfaf6;
@@ -168,6 +173,56 @@
 	    margin-right: auto;
 	  }
 	}
+
+    details > summary {
+      position: relative;
+      cursor: pointer;
+      list-style: none;
+      padding: 0.25rem 7.5rem 0.25rem 0; 
+    }
+
+    details > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details > summary::after {
+      content: 'View Abstract';
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-style: normal;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+
+    details[open] > summary::after {
+      content: 'Hide Abstract';
+    }
+        
+    .abstract {
+      padding: 0.5rem 1rem;
+      margin-top: 0.5rem;
+      margin-left: 1.5rem;
+      font-style: italic;
+      background: var(--header);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.4s ease-out;
+    }
+
+    details[open] > .abstract {
+      max-height: 500px;
+      transition: max-height 0.4s ease-in;
+    }
+    
+    details > summary a {
+      display: inline-block; 
+    }
   </style>
 </head>
 <body>
@@ -198,20 +253,71 @@
       <h2>About Me</h2>
       <p>I am a 5th year graduate student in theoretical computer science at the Institute of Mathematical Sciences, Chennai.
       My interests lie in computational complexity theory, particularly in lower bounds and Polynomial Identity Testing (PIT) in algebraic complexity theory.
-      My advisor is <a href="https://sites.google.com/cse.iitm.ac.in/c-ramya" target="_blank" rel="noopener noreferrer">C. Ramya</a>.</p>
+      My advisor is <a href="https://www.imsc.res.in/ramya_c" target="_blank" rel="noopener noreferrer">C. Ramya</a>.</p>
     </section>
 
     <section id="research">
       <h2>Research</h2>
       <h3>Preprints</h3>
       <ul>
-        <li><a href="Noncommutative_Circuits.pdf" target="_blank" rel="noopener noreferrer">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a></li>
-        <li><a href="ROABP_Hardness.pdf" target="_blank" rel="noopener noreferrer">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a> - Joint work with C. Ramya</li>
+        <li>
+          <details>
+            <summary>
+              <a href="Noncommutative_Circuits.pdf" target="_blank" rel="noopener noreferrer">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a>
+            </summary>
+            <div class="abstract">
+              <p>
+				Proving lower bounds on the size of noncommutative arithmetic circuits is an important problem in arithmetic circuit complexity. For explicit $n$ variate polynomials of degree $\Theta(n)$, the best known general bound is $\Omega(n \log n)$. Recent work of Chatterjee and Hrubeš has provided stronger $(\Omega(n^2))$ bounds for the restricted class of \textit{homogeneous} circuits.
+
+				This paper extends these results to a broader class of circuits by using syntactic degree as a complexity measure. The syntactic degree of a circuit is a well known parameter which measures the extent to which high degree computation is used in the circuit. A homogeneous circuit computing a degree $d$ polynomial can be assumed, without loss of generality, to have syntactic degree exactly equal to $d$. We generalize this by considering circuits that are not necessarily homogeneous but have low syntactic degree. Specifically, for an explicit $n$ variate, degree $n$ polynomial $f$ we show that any circuit with syntactic degree $O(n)$ computing $f$ must have size $\Omega(n^{1+c})$ for some constant $c > 0$. We also show that any circuit with syntactic degree $o(n\log n)$ computing the same $f$ must have size $\omega(n\log n)$. We further analyze the circuit size required to compute $f$ based on the \emph{number} of distinct syntactic degrees appearing in the circuit. Our analysis yields an $\omega(n\log n)$ size lower bound for all but a narrow parameter regime where an improved bound is not obtained. Finally, we observe that low syntactic degree circuits are more powerful than homogeneous circuits in a fine grained sense: there exists an $n$ variate, degree $\Theta(n)$ polynomial that has a circuit of size $O(n\log ^2n)$ and syntactic degree $O(n)$ but any homogeneous circuit computing it requires size $\Omega(n^2).$
+              </p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <details>
+            <summary>
+              <a href="ROABP_Hardness.pdf" target="_blank" rel="noopener noreferrer">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a> - Joint work with C. Ramya
+            </summary>
+            <div class="abstract">
+              <p>The complexity of representing a polynomial by a Read-Once Oblivious Algebraic Branching Program (ROABP) is highly dependent on the chosen variable ordering. Bhargava et al. prove that finding the optimal ordering is NP-hard, and provide some evidence (based on the Small Set Expansion hypothesis) that it is also hard to approximate the optimal ROABP width. In another work, Baraskar et al. show that it is NP-hard to test whether a polynomial is in the $\GL_n$ orbit of a polynomial of sparsity at most $s$.
+
+Building upon these works, we show the following results: first, we prove that approximating the minimum ROABP width up to any constant factor is NP-hard, when the input is presented as a circuit. This removes the reliance on stronger conjectures in the previous work. Second, we show that testing if an input polynomial given in the sparse representation is in the affine $\GL_n$ orbit of a width-$w$ ROABP is NP-hard. Furthermore, we show that over fields of characteristic $0$, the problem is NP-hard even when the input polynomial is homogeneous. This provides the first NP-hardness results for membership testing for a dense subclass of polynomial sized algebraic branching programs (VBP). Finally, we locate the source of hardness for the order finding problem at the lowest possible non-trivial degree, proving that the problem is NP-hard even for quadratic forms.</p>
+            </div>
+          </details>
+        </li>
       </ul>
       <h3>Publications</h3>
       <ul>
-        <li><a href="https://eccc.weizmann.ac.il/report/2025/061/" target="_blank" rel="noopener noreferrer">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - RANDOM 2025, joint work with C. Ramya and Partha Mukhopadhyay</li>
-		<li><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" target="_blank" rel="noopener noreferrer">Lower Bounds for Planar Arithmetic Circuits</a> - ITCS 2024, joint work with C. Ramya</li>
+        <li>
+          <details>
+            <summary>
+              <a href="https://eccc.weizmann.ac.il/report/2025/061/" target="_blank" rel="noopener noreferrer">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - RANDOM 2025, joint work with C. Ramya and Partha Mukhopadhyay
+            </summary>
+            <div class="abstract">
+              <p>We design the first efficient polynomial identity testing algorithms over the nonassociative polynomial algebra. In particular, multiplication among the formal variables is commutative but it is not associative. This complements the strong lower bound results obtained over this algebra by Hrubeš, Yehudayoff, and Wigderson (CCC 2010) and Fijalkow, Lagarde, Ohlmann, and Serre (Computational Complexity 2021) from the identity testing perspective. Our main results are the following:
+
+(1) We construct nonassociative algebras (both commutative and noncommutative) which have no low degree identities. As a result, we obtain the first Amitsur-Levitzki (1950) type theorems over nonassociative polynomial algebras. As a direct consequence, we obtain randomized polynomial-time black-box PIT algorithms for nonassociative polynomials which allow evaluation over such algebras.
+
+(2) On the derandomization side, we give a deterministic polynomial-time identity testing algorithm for nonassociative polynomials given by arithmetic circuits in the white-box setting. Previously, such an algorithm was known with the additional restriction of noncommutativity (Arvind et al. MFCS 2017).
+
+(3) In the black-box setting, we construct a hitting set of quasipolynomial-size for nonassociative polynomials computed by arithmetic circuits of small depth. Understanding the black-box complexity of identity testing, even in the randomized setting, was open prior to our work.</p>
+            </div>
+          </details>
+        </li>
+		    <li>
+          <details>
+            <summary>
+              <a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" target="_blank" rel="noopener noreferrer">Lower Bounds for Planar Arithmetic Circuits</a> - ITCS 2024, joint work with C. Ramya
+            </summary>
+            <div class="abstract">
+              <p>Arithmetic circuits are a natural well-studied model for computing multivariate polynomials over a field. 
+In this paper, we study planar arithmetic circuits. These are circuits whose underlying graph is planar. In particular, we prove an $\Omega(n\log n)$ lower bound on the size of planar arithmetic circuits computing explicit bilinear forms on $2n$ variables. As a consequence, we get an $\Omega(n\log n)$ lower bound on the size of arithmetic formulas and planar algebraic branching programs computing explicit bilinear forms on $2n$ variables. This is the first such lower bound on the formula complexity of an explicit bilinear form. In the case of read-once planar circuits, we show $\Omega(n^2)$ size lower bounds for computing explicit bilinear forms on $2n$ variables. Furthermore, we prove fine separations between the various planar models of computations mentioned above.
+
+In addition to this, we look at multi-output planar circuits and show $\Omega(n^{4/3})$ size lower bound for computing an explicit linear transformation on $n$-variables. For a suitable definition of multi-output formulas, we extend the above result to get an $\Omega(n^2/\log n)$ size lower bound.  As a consequence, we demonstrate that there exists an $n$-variate polynomial computable by an $n^{1 + o(1)}$-sized formula such that any multi-output planar circuit (resp., multi-output formula) simultaneously computing all its first-order partial derivatives requires size $\Omega(n^{4/3})$ (resp., $\Omega(n^2/\log n)$). This shows that a statement analogous to that of Baur, Strassen does not hold in the case of planar circuits and formulas.</p>
+            </div>
+          </details>
+        </li>
       </ul>
     </section>
 
@@ -240,6 +346,20 @@
       document.getElementById('mode-label').textContent = document.body.classList.contains('dark') ? '🌙' : '🌞';
       document.getElementById('year').textContent = new Date().getFullYear();
     };
+  </script>
+  
+  <script>
+    renderMathInElement(
+        document.body,
+        {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "\\[", right: "\\]", display: true},
+                {left: "$", right: "$", display: false},
+                {left: "\\(", right: "\\)", display: false}
+            ]
+        }
+    );
   </script>
 </body>
 </html>
