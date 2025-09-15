@@ -136,6 +136,20 @@
     a:hover {
       text-decoration: underline;
     }
+    
+    /* --- New Styles for Research Section Boxes --- */
+    #research ul {
+      list-style: none; /* Removes the default bullet points */
+      padding-left: 0;   /* Removes the default indentation from the list */
+    }
+
+    #research ul li {
+      background: var(--header); /* Uses the subtle background color from your header */
+      padding: 1.5rem;           /* Adds space inside the box */
+      border-radius: 8px;        /* Creates soft, rounded corners */
+      margin-bottom: 1.5rem;     /* Adds space between the boxes */
+    }
+    /* --- End of New Styles --- */
 
     .download-button {
       display: inline-block;
@@ -207,7 +221,7 @@
       margin-top: 0.5rem;
       margin-left: 1.5rem;
       font-style: italic;
-      background: var(--header);
+      background: var(--bg); /* Changed from var(--header) to stand out from the new box */
       border-left: 3px solid var(--accent);
       border-radius: 4px;
       overflow: hidden;
