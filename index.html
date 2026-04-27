@@ -313,7 +313,6 @@
   }
 
   .section-subgroup {
-    grid-column: 2;
     margin-top: 3rem;
     padding-top: 3rem;
     border-top: 1px solid var(--line);
@@ -370,6 +369,32 @@
   .papers {
     display: grid;
     gap: 1rem;
+  }
+
+  #research {
+    display: block;
+  }
+
+  #research .section-label,
+  #research .papers,
+  #research .section-subgroup {
+    max-width: 900px;
+    margin-left: auto;
+  }
+
+  #research .section-label {
+    position: static;
+    margin-bottom: 1.5rem;
+  }
+
+  #research .section-label h2 {
+    max-width: 100%;
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    overflow-wrap: anywhere;
+  }
+
+  #research .section-label p:not(.eyebrow) {
+    max-width: 34rem;
   }
 
   .paper {
@@ -537,8 +562,11 @@
       position: static;
     }
 
-    .section-subgroup {
-      grid-column: auto;
+    #research .section-label,
+    #research .papers,
+    #research .section-subgroup {
+      max-width: none;
+      margin-left: 0;
     }
 
     .focus-list,
