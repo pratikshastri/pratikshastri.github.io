@@ -1,857 +1,399 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="rgYI-jrwyNoSoAVDmS8sROqJttsfYaxbgNMSDpe_UUw" name="google-site-verification"/>
-<meta name="description" content="Pratik Shastri is a theoretical computer science graduate student at IMSc Chennai working on algebraic complexity theory, lower bounds, and polynomial identity testing."/>
 <title>Pratik Shastri | Theoretical Computer Science</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css"/>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js"></script>
 <style>
-  :root {
-    color-scheme: light;
-    --bg: #f7f2ea;
-    --surface: #fffaf2;
-    --surface-strong: #ffffff;
-    --ink: #15120e;
-    --muted: #645f57;
-    --line: #ded3c2;
-    --accent: #116a74;
-    --accent-strong: #0b4c54;
-    --warm: #b54a35;
-    --shadow: 0 24px 70px rgba(53, 41, 24, 0.12);
-    --max: 1120px;
-  }
-
-  body.dark {
-    color-scheme: dark;
-    --bg: #111316;
-    --surface: #181c20;
-    --surface-strong: #20262b;
-    --ink: #f6f0e6;
-    --muted: #beb6aa;
-    --line: #34383d;
-    --accent: #72c4c7;
-    --accent-strong: #a6e0df;
-    --warm: #e29273;
-    --shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
-  }
-
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background:
-      linear-gradient(90deg, rgba(17, 106, 116, 0.06) 1px, transparent 1px),
-      linear-gradient(180deg, rgba(17, 106, 116, 0.05) 1px, transparent 1px),
-      var(--bg);
-    background-size: 48px 48px;
-    color: var(--ink);
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-
-  a {
-    color: inherit;
-    text-decoration-color: color-mix(in srgb, var(--accent) 64%, transparent);
-    text-decoration-thickness: 1.5px;
-    text-underline-offset: 0.18em;
-  }
-
-  a:hover {
-    color: var(--accent-strong);
-  }
-
-  .skip-link {
-    position: absolute;
-    left: 1rem;
-    top: -4rem;
-    z-index: 10;
-    padding: 0.65rem 0.9rem;
-    background: var(--ink);
-    color: var(--bg);
-    border-radius: 6px;
-    transition: top 0.15s ease;
-  }
-
-  .skip-link:focus {
-    top: 1rem;
-  }
-
-  .site-nav {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    backdrop-filter: blur(18px);
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .nav-inner {
-    max-width: var(--max);
-    margin: 0 auto;
-    padding: 0.85rem 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .brand {
-    font-family: "IBM Plex Mono", monospace;
-    font-weight: 600;
-    letter-spacing: 0;
-    text-decoration: none;
-  }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-  }
-
-  .nav-links a,
-  .theme-toggle {
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    padding: 0.45rem 0.75rem;
-    color: var(--muted);
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .nav-links a:hover,
-  .theme-toggle:hover {
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--accent-strong);
-  }
-
-  .theme-toggle {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    cursor: pointer;
-  }
-
-  .page-shell {
-    max-width: var(--max);
-    margin: 0 auto;
-    padding: 4.5rem 1.25rem 2.5rem;
-  }
-
-  .hero {
-    min-height: calc(100vh - 88px);
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.72fr);
-    align-items: center;
-    gap: clamp(2rem, 5vw, 5rem);
-    padding-bottom: 5rem;
-  }
-
-  .eyebrow {
-    margin: 0 0 1rem;
-    color: var(--accent-strong);
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  h1,
-  h2,
-  h3 {
-    margin: 0;
-    letter-spacing: 0;
-    line-height: 1.08;
-  }
-
-  h1 {
-    max-width: 780px;
-    font-size: clamp(3rem, 8vw, 6.7rem);
-    font-weight: 700;
-  }
-
-  h2 {
-    font-size: clamp(2rem, 4vw, 3.6rem);
-  }
-
-  h3 {
-    font-size: 1.12rem;
-  }
-
-  .hero-copy {
-    max-width: 650px;
-    margin: 1.4rem 0 0;
-    color: var(--muted);
-    font-size: clamp(1.08rem, 2vw, 1.35rem);
-  }
-
-  .hero-actions,
-  .paper-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-  }
-
-  .hero-actions {
-    margin-top: 2rem;
-  }
-
-  .button {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    padding: 0.65rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--ink);
-    font-weight: 700;
-    text-decoration: none;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-  }
-
-  .button.primary {
-    background: var(--ink);
-    color: var(--bg);
-    border-color: var(--ink);
-  }
-
-  .button:hover {
-    transform: translateY(-1px);
-    color: var(--accent-strong);
-    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  }
-
-  .button.primary:hover {
-    color: var(--bg);
-    background: var(--accent-strong);
-    border-color: var(--accent-strong);
-  }
-
-  .portrait-wrap {
-    position: relative;
-    justify-self: end;
-    width: min(100%, 410px);
-  }
-
-  .portrait {
-    width: 100%;
-    aspect-ratio: 4 / 5;
-    display: block;
-    object-fit: cover;
-    object-position: 69% center;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow);
-  }
-
-  .portrait-note {
-    width: min(92%, 320px);
-    margin: -2.2rem auto 0;
-    position: relative;
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
-    box-shadow: 0 18px 45px rgba(53, 41, 24, 0.11);
-  }
-
-  .portrait-note strong {
-    display: block;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.86rem;
-  }
-
-  .portrait-note span {
-    display: block;
-    margin-top: 0.25rem;
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  .content-grid {
-    display: grid;
-    grid-template-columns: minmax(210px, 0.36fr) minmax(0, 1fr);
-    gap: clamp(1.5rem, 4vw, 4.2rem);
-  }
-
-  .section {
-    padding: 5rem 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .section-label {
-    position: sticky;
-    top: 86px;
-    align-self: start;
-  }
-
-  .section-label p {
-    margin: 0.8rem 0 0;
-    color: var(--muted);
-    font-size: 0.96rem;
-  }
-
-  .section-subgroup {
-    margin-top: 3rem;
-    padding-top: 3rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .section-subgroup > div:first-child {
-    margin-bottom: 1.3rem;
-  }
-
-  .section-subgroup h2 {
-    font-size: clamp(1.7rem, 3vw, 2.6rem);
-  }
-
-  .section-subgroup p:not(.eyebrow) {
-    margin: 0.75rem 0 0;
-    color: var(--muted);
-  }
-
-  .lead {
-    margin: 0;
-    color: var(--ink);
-    font-size: clamp(1.12rem, 2vw, 1.42rem);
-  }
-
-  .focus-list {
-    margin: 2rem 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8rem;
-    list-style: none;
-  }
-
-  .focus-list li {
-    min-height: 116px;
-    padding: 1rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--surface) 86%, transparent);
-  }
-
-  .focus-list strong {
-    display: block;
-    font-size: 0.95rem;
-  }
-
-  .focus-list span {
-    display: block;
-    margin-top: 0.4rem;
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  .papers {
-    display: grid;
-    gap: 1rem;
-  }
-
-  #research {
-    display: block;
-  }
-
-  #research .section-label,
-  #research .papers,
-  #research .section-subgroup {
-    max-width: 900px;
-    margin-left: auto;
-  }
-
-  #research .section-label {
-    position: static;
-    margin-bottom: 1.5rem;
-  }
-
-  #research .section-label h2 {
-    max-width: 100%;
-    font-size: clamp(2.6rem, 7vw, 5rem);
-    overflow-wrap: anywhere;
-  }
-
-  #research .section-label p:not(.eyebrow) {
-    max-width: 34rem;
-  }
-
-  .paper {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--surface-strong) 84%, transparent);
-    overflow: clip;
-  }
-
-  .paper-top {
-    padding: 1.1rem 1.1rem 1rem;
-  }
-
-  .paper-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-bottom: 0.7rem;
-  }
-
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0.2rem 0.55rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    background: var(--surface);
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-
-  .venue {
-    color: var(--warm);
-    border-color: color-mix(in srgb, var(--warm) 45%, var(--line));
-  }
-
-  .paper h3 a {
-    text-decoration: none;
-  }
-
-  .paper h3 a:hover {
-    text-decoration: underline;
-  }
-
-  .authors {
-    margin: 0.55rem 0 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-
-  .paper-actions {
-    margin-top: 1rem;
-  }
-
-  details.abstract {
-    border-top: 1px solid var(--line);
-    background: color-mix(in srgb, var(--bg) 62%, transparent);
-  }
-
-  details.abstract summary {
-    cursor: pointer;
-    padding: 0.9rem 1.1rem;
-    color: var(--accent-strong);
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.86rem;
-    font-weight: 600;
-    list-style: none;
-  }
-
-  details.abstract summary::-webkit-details-marker {
-    display: none;
-  }
-
-  details.abstract summary::after {
-    content: "+";
-    float: right;
-  }
-
-  details.abstract[open] summary::after {
-    content: "-";
-  }
-
-  .abstract-body {
-    padding: 0 1.1rem 1.2rem;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-
-  .abstract-body p {
-    margin: 0;
-  }
-
-  .contact-panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1rem;
-  }
-
-  .contact-card {
-    min-height: 170px;
-    padding: 1.1rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-  }
-
-  .contact-card h3 {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.96rem;
-  }
-
-  .contact-card p {
-    margin: 0.75rem 0 0;
-    color: var(--muted);
-  }
-
-  footer {
-    border-top: 1px solid var(--line);
-  }
-
-  .footer-inner {
-    max-width: var(--max);
-    margin: 0 auto;
-    padding: 1.5rem 1.25rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  @media (max-width: 860px) {
-    .nav-links a {
-      display: none;
+    :root {
+      /* Light Mode Palette */
+      --bg: #EEFDFF;
+      --text: #111111;
+      --accent: #0077FF;
+      --border: #DDDDDD;
+
+      /* Dark Mode Palette */
+      --bg-dark: #00001A;
+      --text-dark: #FAFAFA;
+      --border-dark: #333333;
     }
 
-    .page-shell {
-      padding-top: 2.5rem;
+    /* GENERAL STYLES */
+    *, *::before, *::after {
+        box-sizing: border-box;
     }
 
-    .hero {
-      min-height: auto;
-      grid-template-columns: 1fr;
-      padding-bottom: 3.5rem;
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      min-height: 100vh;
     }
 
-    .portrait-wrap {
-      justify-self: stretch;
-      width: min(100%, 520px);
+    body.dark {
+      --bg: var(--bg-dark);
+      --text: var(--text-dark);
+      --border: var(--border-dark);
     }
 
-    .portrait {
-      aspect-ratio: 16 / 11;
-      object-position: 68% 44%;
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
     }
 
-    .content-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+    h1, h2, h3 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 500;
+      color: var(--text);
+      margin: 2.5rem 0 1rem;
     }
 
-    .section-label {
-      position: static;
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.25rem; }
+
+    p { margin: 0 0 1rem 0; }
+
+    a {
+      color: var(--text);
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: var(--accent);
     }
 
-    #research .section-label,
-    #research .papers,
-    #research .section-subgroup {
-      max-width: none;
-      margin-left: 0;
-    }
-
-    .focus-list,
-    .contact-panel {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 560px) {
-    .nav-inner {
-      padding-inline: 1rem;
-    }
-
-    .page-shell {
-      padding-inline: 1rem;
-    }
-
-    h1 {
-      font-size: clamp(2.6rem, 17vw, 4.6rem);
-    }
-
-    .hero-actions .button,
-    .paper-actions .button {
-      width: 100%;
-    }
-
-    .footer-inner {
+    /* HEADER */
+    header {
+      padding: 4rem 1.5rem;
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
       flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+      border-bottom: 1px solid var(--border);
     }
-  }
-</style>
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        width: 100%;
+    }
+
+    .profile-pic {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+        margin: 0;
+        line-height: 1.1;
+    }
+
+    .header-text p {
+        margin: 0.25rem 0 0 0;
+        font-size: 1.1rem;
+        color: var(--text);
+        opacity: 0.7;
+    }
+
+    .contact-info {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        opacity: 0.8;
+    }
+
+    .contact-info a {
+        color: var(--text);
+    }
+    .contact-info a:hover {
+        color: var(--accent);
+    }
+
+
+    /* DARK MODE TOGGLE */
+    .toggle-button {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+    .toggle-button:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      transform: rotate(15deg) scale(1.1);
+    }
+
+    /* RESEARCH SECTION */
+    #research ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    #research ul li {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    #research ul li:last-child {
+        border-bottom: none;
+    }
+
+    details > summary {
+      cursor: pointer;
+      list-style: none;
+      position: relative;
+      padding-right: 8rem;
+    }
+    details > summary::-webkit-details-marker { display: none; }
+
+    details > summary::after {
+      content: 'View Abstract';
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: 'IBM Plex Mono', monospace;
+      text-decoration: underline;
+      white-space: nowrap;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+    }
+    details > summary:hover::after {
+        opacity: 1;
+        color: var(--accent);
+    }
+    details[open] > summary::after { content: 'Hide Abstract'; }
+
+    details summary a {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 1.1rem;
+        text-decoration: none; /* Summary links are the exception to the underline rule */
+    }
+    details summary a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+
+    .abstract {
+      padding: 1rem 0 0 1.5rem;
+      margin-top: 1rem;
+      border-left: 2px solid var(--accent);
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+    .abstract p {
+        margin: 0;
+    }
+
+    /* CV BUTTON */
+    .download-button {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--text);
+      text-decoration: none;
+      font-family: 'IBM Plex Mono', monospace;
+      transition: all 0.2s ease;
+    }
+    .download-button:hover {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      font-size: 0.9rem;
+      opacity: 0.6;
+      border-top: 1px solid var(--border);
+    }
+
+    /* RESPONSIVE DESIGN FOR MOBILE */
+    @media (max-width: 768px) {
+      body {
+        font-size: 16px;
+      }
+
+      main, header {
+        padding: 2.5rem 1rem;
+      }
+
+      h1 { font-size: 2rem; }
+      h2 { font-size: 1.5rem; }
+
+      .header-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .contact-info {
+        text-align: center;
+      }
+    }
+
+  </style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<nav class="site-nav" aria-label="Primary navigation">
-  <div class="nav-inner">
-    <a class="brand" href="#">Pratik Shastri</a>
-    <div class="nav-links">
-      <a href="#about">About</a>
-      <a href="#research">Research</a>
-      <a href="#contact">Contact</a>
-      <button class="theme-toggle" type="button" aria-label="Toggle dark mode" id="themeToggle">
-        <span id="themeLabel">Dark</span>
-      </button>
-    </div>
-  </div>
-</nav>
-
-<div class="page-shell">
-  <header class="hero">
-    <div>
-      <p class="eyebrow">Theoretical Computer Science at IMSc Chennai</p>
-      <h1>Pratik Shastri</h1>
-      <p class="hero-copy">
-        I study algebraic complexity theory, with a focus on lower bounds, polynomial identity testing,
-        and the structure of arithmetic computation.
-      </p>
-      <div class="hero-actions" aria-label="Quick links">
-        <a class="button primary" href="#research">View Research</a>
-        <a class="button" href="CV.pdf" target="_blank" rel="noopener noreferrer">Open CV</a>
-        <a class="button" href="mailto:pratiks@imsc.res.in">Email</a>
-      </div>
-    </div>
-
-    <div class="portrait-wrap" aria-label="Portrait of Pratik Shastri">
-      <img class="portrait" src="788f16b6-cb0b-4319-9256-96ad4916cb15.JPG" alt="Pratik Shastri standing outdoors"/>
-      <div class="portrait-note">
-        <strong>Graduate student</strong>
-        <span>The Institute of Mathematical Sciences, Chennai</span>
-      </div>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="section content-grid" id="about">
-      <div class="section-label">
-        <p class="eyebrow">About</p>
-        <h2>Current Work</h2>
-        <p>Advised by <a href="https://www.imsc.res.in/ramya_c" target="_blank" rel="noopener noreferrer">C. Ramya</a>.</p>
-      </div>
-      <div>
-        <p class="lead">
-          I am a 5th year graduate student in theoretical computer science at the Institute of Mathematical Sciences,
-          Chennai. My research is in computational complexity theory, especially algebraic lower bounds and
-          Polynomial Identity Testing.
-        </p>
-        <ul class="focus-list" aria-label="Research focus areas">
-          <li>
-            <strong>Lower bounds</strong>
-            <span>Arithmetic circuits, formulas, planar models, and noncommutative computation.</span>
-          </li>
-          <li>
-            <strong>Identity testing</strong>
-            <span>Deterministic and randomized PIT over structured algebraic models.</span>
-          </li>
-          <li>
-            <strong>Representation hardness</strong>
-            <span>ROABPs, variable orderings, orbit membership, and equivalence testing.</span>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="section content-grid" id="research">
-      <div class="section-label">
-        <p class="eyebrow">Research</p>
-        <h2>Publications</h2>
-        <p>Selected papers with abstracts and links.</p>
-      </div>
-      <div class="papers">
-        <article class="paper">
-          <div class="paper-top">
-            <div class="paper-meta">
-              <span class="tag venue">ITCS 2026</span>
-              <span class="tag">Noncommutative circuits</span>
-              <span class="tag">Lower bounds</span>
-            </div>
-            <h3><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2026.115" target="_blank" rel="noopener noreferrer">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a></h3>
-            <p class="authors">Pratik Shastri</p>
-            <div class="paper-actions">
-              <a class="button" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2026.115" target="_blank" rel="noopener noreferrer">DOI</a>
-            </div>
-          </div>
-          <details class="abstract">
-            <summary>Abstract</summary>
-            <div class="abstract-body">
-              <p>Proving lower bounds on the size of noncommutative arithmetic circuits is an important problem in arithmetic circuit complexity. For explicit $n$ variate polynomials of degree $\Theta(n)$, the best known general bound is $\Omega(n \log n)$. Recent work of Chatterjee and Hrubeš has provided stronger $(\Omega(n^2))$ bounds for the restricted class of homogeneous circuits. This paper extends these results to a broader class of circuits by using syntactic degree as a complexity measure.</p>
-            </div>
-          </details>
-        </article>
-
-        <article class="paper">
-          <div class="paper-top">
-            <div class="paper-meta">
-              <span class="tag venue">FSTTCS 2025</span>
-              <span class="tag">ROABPs</span>
-              <span class="tag">NP-hardness</span>
-            </div>
-            <h3><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.FSTTCS.2025.49" target="_blank" rel="noopener noreferrer">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a></h3>
-            <p class="authors">Joint work with C. Ramya</p>
-            <div class="paper-actions">
-              <a class="button" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.FSTTCS.2025.49" target="_blank" rel="noopener noreferrer">DOI</a>
-            </div>
-          </div>
-          <details class="abstract">
-            <summary>Abstract</summary>
-            <div class="abstract-body">
-              <p>The complexity of representing a polynomial by a Read-Once Oblivious Algebraic Branching Program (ROABP) is highly dependent on the chosen variable ordering. Building on prior hardness results, we prove that approximating the minimum ROABP width up to any constant factor is NP-hard when the input is presented as a circuit, and show NP-hardness for affine $\mathrm{GL}_n$ orbit membership of width-$w$ ROABPs.</p>
-            </div>
-          </details>
-        </article>
-
-        <article class="paper">
-          <div class="paper-top">
-            <div class="paper-meta">
-              <span class="tag venue">RANDOM 2025</span>
-              <span class="tag">PIT</span>
-              <span class="tag">Nonassociative algebras</span>
-            </div>
-            <h3><a href="https://doi.org/10.4230/LIPIcs.APPROX/RANDOM.2025.56" target="_blank" rel="noopener noreferrer">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a></h3>
-            <p class="authors">Joint work with C. Ramya and Partha Mukhopadhyay</p>
-            <div class="paper-actions">
-              <a class="button" href="https://doi.org/10.4230/LIPIcs.APPROX/RANDOM.2025.56" target="_blank" rel="noopener noreferrer">DOI</a>
-            </div>
-          </div>
-          <details class="abstract">
-            <summary>Abstract</summary>
-            <div class="abstract-body">
-              <p>We design efficient polynomial identity testing algorithms over the nonassociative polynomial algebra, where multiplication among formal variables is commutative but not associative. The results include randomized black-box PIT algorithms, deterministic white-box identity testing, and quasipolynomial-size hitting sets for small-depth circuits.</p>
-            </div>
-          </details>
-        </article>
-
-        <article class="paper">
-          <div class="paper-top">
-            <div class="paper-meta">
-              <span class="tag venue">ITCS 2024</span>
-              <span class="tag">Planar circuits</span>
-              <span class="tag">Lower bounds</span>
-            </div>
-            <h3><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" target="_blank" rel="noopener noreferrer">Lower Bounds for Planar Arithmetic Circuits</a></h3>
-            <p class="authors">Joint work with C. Ramya</p>
-            <div class="paper-actions">
-              <a class="button" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" target="_blank" rel="noopener noreferrer">DOI</a>
-            </div>
-          </div>
-          <details class="abstract">
-            <summary>Abstract</summary>
-            <div class="abstract-body">
-              <p>We study planar arithmetic circuits and prove an $\Omega(n\log n)$ lower bound on the size of planar arithmetic circuits computing explicit bilinear forms on $2n$ variables. The work also gives stronger read-once planar lower bounds and fine separations among planar models of computation.</p>
-            </div>
-          </details>
-        </article>
-      </div>
-
-      <div class="section-subgroup">
-        <div>
-          <p class="eyebrow">Preprints</p>
-          <h2>Preprints</h2>
-          <p>Recent manuscripts available on arXiv.</p>
-        </div>
-        <div class="papers">
-          <article class="paper">
-            <div class="paper-top">
-              <div class="paper-meta">
-                <span class="tag venue">arXiv 2026</span>
-                <span class="tag">Noncommutative circuits</span>
-                <span class="tag">Lower bounds</span>
-              </div>
-              <h3><a href="https://arxiv.org/abs/2604.20575" target="_blank" rel="noopener noreferrer">A Quadratic Lower Bound for Noncommutative Circuits</a></h3>
-              <p class="authors">Pratik Shastri</p>
-              <div class="paper-actions">
-                <a class="button" href="https://arxiv.org/abs/2604.20575" target="_blank" rel="noopener noreferrer">arXiv</a>
-                <a class="button" href="https://arxiv.org/pdf/2604.20575" target="_blank" rel="noopener noreferrer">PDF</a>
-              </div>
-            </div>
-            <details class="abstract">
-              <summary>Abstract</summary>
-              <div class="abstract-body">
-                <p>We prove that every fan-in $2$ noncommutative arithmetic circuit computing the palindrome polynomial has size $\Omega(n^2)$. The proof builds on and refines a previous work of the author. The new ingredients in the proof were generated by Gemini 3.1 Pro.</p>
-              </div>
-            </details>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section content-grid" id="contact">
-      <div class="section-label">
-        <p class="eyebrow">Contact</p>
-        <h2>Reach Out</h2>
-        <p>Research conversations, seminar notes, and complexity questions are welcome.</p>
-      </div>
-      <div class="contact-panel">
-        <div class="contact-card">
-          <h3>Email</h3>
-          <p><a href="mailto:pratiks@imsc.res.in">pratiks AT imsc DOT res DOT in</a></p>
-        </div>
-        <div class="contact-card">
-          <h3>Address</h3>
-          <p>The Institute of Mathematical Sciences<br/>Taramani, Chennai 600 113</p>
-        </div>
-      </div>
-    </section>
-  </main>
+<button aria-label="Toggle dark mode" class="toggle-button" onclick="toggleDarkMode()"><span id="mode-label">🌞</span></button>
+<header>
+<div class="header-content">
+<img alt="Pratik Shastri" class="profile-pic" src="788f16b6-cb0b-4319-9256-96ad4916cb15.JPG"/>
+<div class="header-text">
+<h1>Pratik Shastri</h1>
+<p>Theoretical Computer Science · IMSc Chennai</p>
 </div>
+</div>
+<div class="contact-info">
+<p>
+            The Institute of Mathematical Sciences, Taramani, Chennai 600 113<br/>
+            Email: <a href="mailto:pratiks@imsc.res.in">pratiks AT imsc DOT res DOT in</a>
+</p>
+</div>
+</header>
+<main>
+<section id="about">
+<h2>About Me</h2>
+<p>I am a 5th year graduate student in theoretical computer science at the Institute of Mathematical Sciences, Chennai. My interests lie in computational complexity theory, particularly in lower bounds and Polynomial Identity Testing (PIT) in algebraic complexity theory. My advisor is <a href="https://www.imsc.res.in/ramya_c" rel="noopener noreferrer" target="_blank">C. Ramya</a>.</p>
+</section>
+<section id="research">
+<h2>Research</h2>
 
+
+<h3>Publications</h3>
+<ul><li><details><summary><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2026.115" rel="noopener noreferrer" target="_blank">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a> - ITCS 2026</summary><div class="abstract">
+<p>
+				Proving lower bounds on the size of noncommutative arithmetic circuits is an important problem in arithmetic circuit complexity. For explicit $n$ variate polynomials of degree $\Theta(n)$, the best known general bound is $\Omega(n \log n)$. Recent work of Chatterjee and Hrubeš has provided stronger $(\Omega(n^2))$ bounds for the restricted class of homogeneous circuits.
+
+				This paper extends these results to a broader class of circuits by using syntactic degree as a complexity measure. The syntactic degree of a circuit is a well known parameter which measures the extent to which high degree computation is used in the circuit. A homogeneous circuit computing a degree $d$ polynomial can be assumed, without loss of generality, to have syntactic degree exactly equal to $d$. We generalize this by considering circuits that are not necessarily homogeneous but have low syntactic degree. Specifically, for an explicit $n$ variate, degree $n$ polynomial $f$ we show that any circuit with syntactic degree $O(n)$ computing $f$ must have size $\Omega(n^{1+c})$ for some constant $c &gt; 0$. We also show that any circuit with syntactic degree $o(n\log n)$ computing the same $f$ must have size $\omega(n\log n)$. We further analyze the circuit size required to compute $f$ based on the number of distinct syntactic degrees appearing in the circuit. Our analysis yields an $\omega(n\log n)$ size lower bound for all but a narrow parameter regime where an improved bound is not obtained. Finally, we observe that low syntactic degree circuits are more powerful than homogeneous circuits in a fine grained sense: there exists an $n$ variate, degree $\Theta(n)$ polynomial that has a circuit of size $O(n\log ^2n)$ and syntactic degree $O(n)$ but any homogeneous circuit computing it requires size $\Omega(n^2).$
+              </p>
+</div></details></li>
+<li>
+<details>
+<summary>
+<a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.FSTTCS.2025.49" rel="noopener noreferrer" target="_blank">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a> - FSTTCS 2025, joint work with C. Ramya
+		            </summary>
+<div class="abstract">
+<p>The complexity of representing a polynomial by a Read-Once Oblivious Algebraic Branching Program (ROABP) is highly dependent on the chosen variable ordering. Bhargava et al. prove that finding the optimal ordering is NP-hard, and provide some evidence (based on the Small Set Expansion hypothesis) that it is also hard to approximate the optimal ROABP width. In another work, Baraskar et al. show that it is NP-hard to test whether a polynomial is in the $\mathrm{GL}_n$ orbit of a polynomial of sparsity at most $s$.
+
+		Building upon these works, we show the following results: first, we prove that approximating the minimum ROABP width up to any constant factor is NP-hard, when the input is presented as a circuit. This removes the reliance on stronger conjectures in the previous work. Second, we show that testing if an input polynomial given in the sparse representation is in the affine $\mathrm{GL}_n$ orbit of a width-$w$ ROABP is NP-hard. Furthermore, we show that over fields of characteristic $0$, the problem is NP-hard even when the input polynomial is homogeneous. This provides the first NP-hardness results for membership testing for a dense subclass of polynomial sized algebraic branching programs (VBP). Finally, we locate the source of hardness for the order finding problem at the lowest possible non-trivial degree, proving that the problem is NP-hard even for quadratic forms.</p>
+</div>
+</details>
+</li>
+<li>
+<details>
+<summary>
+<a href="https://doi.org/10.4230/LIPIcs.APPROX/RANDOM.2025.56" rel="noopener noreferrer" target="_blank">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - RANDOM 2025, joint work with C. Ramya and Partha Mukhopadhyay
+            </summary>
+<div class="abstract">
+<p>We design the first efficient polynomial identity testing algorithms over the nonassociative polynomial algebra. In particular, multiplication among the formal variables is commutative but it is not associative. This complements the strong lower bound results obtained over this algebra by Hrubeš, Yehudayoff, and Wigderson (CCC 2010) and Fijalkow, Lagarde, Ohlmann, and Serre (Computational Complexity 2021) from the identity testing perspective. Our main results are the following:
+
+(1) We construct nonassociative algebras (both commutative and noncommutative) which have no low degree identities. As a result, we obtain the first Amitsur-Levitzki (1950) type theorems over nonassociative polynomial algebras. As a direct consequence, we obtain randomized polynomial-time black-box PIT algorithms for nonassociative polynomials which allow evaluation over such algebras.
+
+(2) On the derandomization side, we give a deterministic polynomial-time identity testing algorithm for nonassociative polynomials given by arithmetic circuits in the white-box setting. Previously, such an algorithm was known with the additional restriction of noncommutativity (Arvind et al. MFCS 2017).
+
+(3) In the black-box setting, we construct a hitting set of quasipolynomial-size for nonassociative polynomials computed by arithmetic circuits of small depth. Understanding the black-box complexity of identity testing, even in the randomized setting, was open prior to our work.</p>
+</div>
+</details>
+</li>
+<li>
+<details>
+<summary>
+<a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" rel="noopener noreferrer" target="_blank">Lower Bounds for Planar Arithmetic Circuits</a> - ITCS 2024, joint work with C. Ramya
+            </summary>
+<div class="abstract">
+<p>Arithmetic circuits are a natural well-studied model for computing multivariate polynomials over a field.
+In this paper, we study planar arithmetic circuits. These are circuits whose underlying graph is planar. In particular, we prove an $\Omega(n\log n)$ lower bound on the size of planar arithmetic circuits computing explicit bilinear forms on $2n$ variables. As a consequence, we get an $\Omega(n\log n)$ lower bound on the size of arithmetic formulas and planar algebraic branching programs computing explicit bilinear forms on $2n$ variables. This is the first such lower bound on the formula complexity of an explicit bilinear form. In the case of read-once planar circuits, we show $\Omega(n^2)$ size lower bounds for computing explicit bilinear forms on $2n$ variables. Furthermore, we prove fine separations between the various planar models of computations mentioned above.
+
+In addition to this, we look at multi-output planar circuits and show $\Omega(n^{4/3})$ size lower bound for computing an explicit linear transformation on $n$-variables. For a suitable definition of multi-output formulas, we extend the above result to get an $\Omega(n^2/\log n)$ size lower bound.  As a consequence, we demonstrate that there exists an $n$-variate polynomial computable by an $n^{1 + o(1)}$-sized formula such that any multi-output planar circuit (resp., multi-output formula) simultaneously computing all its first-order partial derivatives requires size $\Omega(n^{4/3})$ (resp., $\Omega(n^2/\log n)$). This shows that a statement analogous to that of Baur, Strassen does not hold in the case of planar circuits and formulas.</p>
+</div>
+</details>
+</li>
+</ul>
+<h3>Preprints</h3>
+<ul>
+<li>
+<details>
+<summary>
+<a href="https://arxiv.org/abs/2604.20575" rel="noopener noreferrer" target="_blank">A Quadratic Lower Bound for Noncommutative Circuits</a> - arXiv 2026
+            </summary>
+<div class="abstract">
+<p>We prove that every fan-in $2$ noncommutative arithmetic circuit computing the palindrome polynomial has size $\Omega(n^2)$. The proof builds on and refines a previous work of the author. The new ingredients in the proof were generated by Gemini 3.1 Pro.</p>
+</div>
+</details>
+</li>
+</ul>
+</section>
+<section id="cv">
+<h2>Curriculum Vitae</h2>
+<a class="download-button" href="CV.pdf" rel="noopener noreferrer" target="_blank">Download CV</a>
+</section>
+</main>
 <footer>
-  <div class="footer-inner">
-    <span>&copy; <span id="year"></span> Pratik Shastri</span>
-    <span>Theoretical Computer Science</span>
-  </div>
+<p>© <span id="year"></span> Pratik Shastri</p>
 </footer>
-
 <script>
-  const body = document.body;
-  const themeToggle = document.getElementById("themeToggle");
-  const themeLabel = document.getElementById("themeLabel");
-
-  function setTheme(theme) {
-    const isDark = theme === "dark";
-    body.classList.toggle("dark", isDark);
-    themeLabel.textContent = isDark ? "Light" : "Dark";
-    localStorage.setItem("theme", theme);
-  }
-
-  themeToggle.addEventListener("click", () => {
-    setTheme(body.classList.contains("dark") ? "light" : "dark");
-  });
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setTheme(savedTheme || (prefersDark ? "dark" : "light"));
-    document.getElementById("year").textContent = new Date().getFullYear();
-
-    if (window.renderMathInElement) {
-      renderMathInElement(document.body, {
-        delimiters: [
-          { left: "$$", right: "$$", display: true },
-          { left: "$", right: "$", display: false }
-        ]
-      });
+    function toggleDarkMode() {
+      const body = document.body;
+      body.classList.toggle('dark');
+      const isDarkMode = body.classList.contains('dark');
+      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+      document.getElementById('mode-label').textContent = isDarkMode ? '🌙' : '🌞';
     }
-  });
-</script>
+
+    window.onload = () => {
+      const isDarkMode = localStorage.getItem('theme') === 'dark';
+      if (isDarkMode) {
+        document.body.classList.add('dark');
+      }
+      document.getElementById('mode-label').textContent = isDarkMode ? '🌙' : '🌞';
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      renderMathInElement(document.body, {
+          delimiters: [
+              {left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}
+          ]
+      });
+    };
+  </script>
 </body>
 </html>
