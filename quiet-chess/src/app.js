@@ -54,9 +54,7 @@ const state = {
   analysisToken: 0,
   analysisFen: "",
   analysisLines: new Map(),
-  analysisRedo: [],
-  drag: null,
-  suppressClick: false
+  analysisRedo: []
 };
 
 const moveEngine = new StockfishClient();
@@ -113,7 +111,6 @@ function renderBoard() {
       lastMove && (lastMove.from === square || lastMove.to === square) ? "last" : "",
       legal && piece ? "capture-target" : "",
       legal && !piece ? "target" : "",
-      state.drag?.from === square && state.drag.started ? "drag-source" : "",
       !isAtLivePosition() ? "readonly" : ""
     ].filter(Boolean).join(" ");
     button.dataset.square = square;
@@ -125,16 +122,7 @@ function renderBoard() {
       button.append(pieceEl);
     }
 
-    button.addEventListener("pointerdown", (event) => onSquarePointerDown(square, event));
-    button.addEventListener("click", (event) => {
-      if (state.suppressClick) {
-        event.preventDefault();
-        event.stopPropagation();
-        state.suppressClick = false;
-        return;
-      }
-      onSquare(square);
-    });
+    button.addEventListener("click", () => onSquare(square));
     return button;
   }));
 }
@@ -253,116 +241,6 @@ function onSquare(square) {
   }
 
   clearSelection();
-}
-
-function onSquarePointerDown(square, event) {
-  if (event.button !== 0 || !canEditBoard()) return;
-
-  const piece = state.chess.get(square);
-  if (!piece || piece.color !== state.chess.turn()) return;
-
-  event.preventDefault();
-  els.board.setPointerCapture?.(event.pointerId);
-  state.drag = {
-    from: square,
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    x: event.clientX,
-    y: event.clientY,
-    started: false,
-    ghost: null,
-    size: 0
-  };
-  state.selected = square;
-  state.legalMoves = state.chess.moves({ square, verbose: true });
-}
-
-function onBoardPointerMove(event) {
-  const drag = state.drag;
-  if (!drag || drag.pointerId !== event.pointerId) return;
-
-  drag.x = event.clientX;
-  drag.y = event.clientY;
-  const distance = Math.hypot(drag.x - drag.startX, drag.y - drag.startY);
-  if (!drag.started && distance < 5) return;
-
-  event.preventDefault();
-  if (!drag.started) {
-    drag.started = true;
-    state.suppressClick = true;
-    createDragGhost();
-    renderBoard();
-  }
-
-  moveDragGhost();
-}
-
-function onBoardPointerUp(event) {
-  const drag = state.drag;
-  if (!drag || drag.pointerId !== event.pointerId) return;
-
-  if (!drag.started) {
-    cleanupDrag(false);
-    return;
-  }
-
-  event.preventDefault();
-  const target = squareFromPoint(event.clientX, event.clientY);
-  const move = target ? state.legalMoves.find((candidate) => candidate.from === drag.from && candidate.to === target) : null;
-  cleanupDrag(true);
-
-  if (move) {
-    maybeMove(move);
-  } else {
-    clearSelection();
-  }
-}
-
-function onBoardPointerCancel(event) {
-  const drag = state.drag;
-  if (!drag || drag.pointerId !== event.pointerId) return;
-  cleanupDrag(true);
-  clearSelection();
-}
-
-function squareFromPoint(x, y) {
-  return document.elementFromPoint(x, y)?.closest("[data-square]")?.dataset.square || null;
-}
-
-function createDragGhost() {
-  const drag = state.drag;
-  if (!drag) return;
-
-  const piece = state.chess.get(drag.from);
-  const source = els.board.querySelector(`[data-square="${drag.from}"]`);
-  if (!piece || !source) return;
-
-  const rect = source.getBoundingClientRect();
-  drag.size = rect.width * 0.94;
-  drag.ghost = createPiece(piece);
-  drag.ghost.className = "piece drag-ghost " + (piece.color === "w" ? "white" : "black");
-  drag.ghost.style.width = `${drag.size}px`;
-  drag.ghost.style.height = `${drag.size}px`;
-  document.body.append(drag.ghost);
-  document.body.classList.add("dragging-piece");
-  moveDragGhost();
-}
-
-function moveDragGhost() {
-  const drag = state.drag;
-  if (!drag?.ghost) return;
-  const offset = drag.size / 2;
-  drag.ghost.style.transform = `translate3d(${drag.x - offset}px, ${drag.y - offset}px, 0)`;
-}
-
-function cleanupDrag(shouldRender) {
-  if (state.drag?.ghost) {
-    state.drag.ghost.remove();
-  }
-  document.body.classList.remove("dragging-piece");
-  state.drag = null;
-  if (shouldRender) renderBoard();
 }
 
 function canEditBoard() {
@@ -858,9 +736,6 @@ els.backBtn.addEventListener("click", navigateBack);
 els.forwardBtn.addEventListener("click", navigateForward);
 els.loadFenBtn.addEventListener("click", loadFen);
 els.copyFenBtn.addEventListener("click", copyFen);
-els.board.addEventListener("pointermove", onBoardPointerMove);
-els.board.addEventListener("pointerup", onBoardPointerUp);
-els.board.addEventListener("pointercancel", onBoardPointerCancel);
 els.promotionDialog.addEventListener("close", () => {
   if (!state.pendingPromotion || !els.promotionDialog.returnValue) {
     state.pendingPromotion = null;
@@ -883,5 +758,3 @@ window.addEventListener("keydown", (event) => {
 });
 
 enterSetup();
-
-window.quietChess = { state };
