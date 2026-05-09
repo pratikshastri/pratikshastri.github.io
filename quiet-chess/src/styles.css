@@ -18,6 +18,11 @@
   box-sizing: border-box;
 }
 
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 [hidden] {
   display: none !important;
 }
@@ -25,6 +30,8 @@
 body {
   margin: 0;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
   color: var(--ink);
   background:
     radial-gradient(circle at 18% 12%, rgba(185, 111, 67, 0.16), transparent 22rem),
@@ -44,10 +51,10 @@ button {
 }
 
 .app-shell {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1180px, 100%);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 24px 0;
+  padding: 24px 16px;
 }
 
 .hero-bar,
@@ -69,6 +76,10 @@ button {
   gap: 18px;
   padding: 16px;
   margin-bottom: 16px;
+}
+
+.hero-bar > div {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -111,6 +122,7 @@ h3 {
 
 .global-actions {
   display: flex;
+  min-width: 0;
   gap: 6px;
   padding: 5px;
   border: 1px solid var(--line);
@@ -209,6 +221,7 @@ input:focus-visible {
 .board-frame {
   display: grid;
   place-items: center;
+  width: 100%;
   min-width: 0;
   padding: clamp(10px, 2vw, 18px);
   overflow: hidden;
@@ -222,6 +235,7 @@ input:focus-visible {
   grid-template-columns: 20px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) 20px;
   width: min(100%, calc(100vh - 250px), 680px);
+  max-width: 100%;
   aspect-ratio: 1;
   min-width: 0;
 }
@@ -690,6 +704,10 @@ input[type="text"] {
 }
 
 @media (max-width: 920px) {
+  .app-shell {
+    padding: 12px;
+  }
+
   .hero-bar,
   .game-layout {
     grid-template-columns: 1fr;
@@ -714,22 +732,78 @@ input[type="text"] {
 
   .panel {
     max-height: none;
+    overflow: visible;
   }
 
   .board-with-coords {
-    width: min(92vw, 680px);
+    width: 100%;
+    max-width: min(680px, calc(100vw - 72px));
   }
 }
 
 @media (max-width: 560px) {
   .app-shell {
-    width: min(100vw - 18px, 1180px);
-    padding: 9px 0;
+    width: 100%;
+    padding: 8px;
   }
 
   .game-layout,
   .hero-bar {
-    padding: 10px;
+    padding: 8px;
+  }
+
+  .hero-bar {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 11vw, 2.45rem);
+    line-height: 0.95;
+  }
+
+  h2 {
+    font-size: clamp(1.18rem, 7vw, 1.55rem);
+  }
+
+  .global-actions {
+    width: 100%;
+  }
+
+  .global-action {
+    min-width: 0;
+    padding: 0 10px;
+  }
+
+  .game-layout {
+    gap: 10px;
+  }
+
+  .board-frame {
+    padding: 6px;
+  }
+
+  .board-with-coords {
+    grid-template-columns: 14px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 14px;
+    max-width: calc(100vw - 44px);
+  }
+
+  .rank-coords {
+    padding-block: 5px;
+  }
+
+  .file-coords {
+    padding-inline: 5px;
+  }
+
+  .rank-coords span,
+  .file-coords span {
+    font-size: 0.58rem;
   }
 
   .control-grid,
@@ -739,15 +813,94 @@ input[type="text"] {
   }
 
   .under-board {
-    justify-content: stretch;
+    display: grid;
+    grid-template-columns: 36px minmax(52px, 1fr) 36px minmax(52px, 1fr) minmax(52px, 1fr);
+    gap: 6px;
+    padding: 8px;
   }
 
   .under-board button {
-    flex: 1;
-    padding: 0 8px;
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  .icon-button {
+    min-width: 0;
+    font-size: 1.25rem;
+  }
+
+  .cursor-label {
+    min-width: 0;
+    padding: 0 2px;
+    font-size: 0.72rem;
+    align-self: center;
   }
 
   .board {
-    border-width: 6px;
+    border-width: 5px;
+    border-radius: 6px;
+  }
+
+  .panel-section {
+    padding: 12px;
+  }
+
+  .move-list,
+  .engine-line {
+    grid-template-columns: 1fr;
+  }
+
+  .engine-line {
+    gap: 4px;
+  }
+
+  .engine-rank,
+  .engine-eval,
+  .engine-depth {
+    justify-self: start;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-shell {
+    padding: 6px;
+  }
+
+  .game-layout,
+  .hero-bar {
+    padding: 7px;
+  }
+
+  .board-frame {
+    padding: 5px;
+  }
+
+  .board-with-coords {
+    grid-template-columns: 12px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 12px;
+    max-width: calc(100vw - 36px);
+  }
+
+  .rank-coords span,
+  .file-coords span {
+    font-size: 0.52rem;
+  }
+
+  .under-board {
+    grid-template-columns: 32px minmax(44px, 1fr) 32px minmax(46px, 1fr) minmax(46px, 1fr);
+  }
+
+  .under-board button {
+    padding: 0 4px;
+    font-size: 0.78rem;
+  }
+
+  .icon-button {
+    font-size: 1.14rem;
   }
 }
