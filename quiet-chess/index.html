@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiet Chess</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2330413d'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='38' fill='%23fff9eb'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-bar" aria-label="Game header">
+      <div>
+        <p class="eyebrow">Stockfish powered</p>
+        <h1>Quiet Chess</h1>
+      </div>
+      <div class="global-actions" aria-label="Global actions">
+        <button id="globalPlayBtn" class="global-action active" type="button">Play</button>
+        <button id="globalAnalysisBtn" class="global-action" type="button">Analysis</button>
+      </div>
+    </section>
+
+    <section class="game-layout">
+      <div class="board-wrap">
+        <div class="board-frame">
+          <div id="boardWithCoords" class="board-with-coords">
+            <div id="rankCoords" class="rank-coords" aria-hidden="true"></div>
+            <div id="board" class="board" aria-label="Chess board"></div>
+            <div id="fileCoords" class="file-coords" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="under-board">
+          <button id="backBtn" class="ghost-button icon-button" type="button" aria-label="Previous move">‹</button>
+          <span id="cursorLabel" class="cursor-label">Start</span>
+          <button id="forwardBtn" class="ghost-button icon-button" type="button" aria-label="Next move">›</button>
+          <button id="flipBtn" class="ghost-button" type="button">Flip</button>
+          <button id="undoBtn" class="ghost-button" type="button">Undo</button>
+        </div>
+      </div>
+
+      <aside class="panel" aria-label="Game controls and status">
+        <section class="panel-section">
+          <div class="status-row">
+            <span class="status-label">Position</span>
+            <span id="statusPill" class="status-pill">Ready</span>
+          </div>
+          <h2 id="statusTitle">White to move</h2>
+          <p id="statusDetail">Choose a piece to see legal moves.</p>
+        </section>
+
+        <section class="panel-section mode-panel" data-panel="setup">
+          <h3>New Game</h3>
+          <div class="control-grid setup-controls">
+            <label>
+              Side
+              <select id="sideSelect">
+                <option value="w">White</option>
+                <option value="b">Black</option>
+              </select>
+            </label>
+            <label>
+              Level
+              <select id="difficultySelect">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="extra">Extra Hard</option>
+              </select>
+            </label>
+          </div>
+          <label class="check-row setup-controls">
+            <input id="autoFlipToggle" type="checkbox">
+            Flip board after each move
+          </label>
+          <div class="choice-grid">
+            <button id="startBotBtn" class="primary-button" type="button">Play Bot</button>
+            <button id="startFriendBtn" class="ghost-button" type="button">Play Friend</button>
+          </div>
+        </section>
+
+        <section class="panel-section mode-panel" data-panel="game">
+          <h3>Active Game</h3>
+          <div class="game-summary">
+            <div>
+              <span class="mini-label">Mode</span>
+              <strong id="gameModeText">Bot</strong>
+            </div>
+            <div>
+              <span class="mini-label">Details</span>
+              <strong id="gameDetailText">White vs Medium</strong>
+            </div>
+          </div>
+          <button id="quitBtn" class="danger-button" type="button">Quit Game</button>
+        </section>
+
+        <section class="panel-section mode-panel hidden" data-panel="analysis">
+          <h3>Analysis Board</h3>
+          <div class="eval-card">
+            <div class="eval-bar" aria-label="Engine evaluation">
+              <span id="evalFill"></span>
+            </div>
+            <div>
+              <div id="evalText" class="eval-score">Waiting</div>
+              <div id="bestLine" class="best-line">Stockfish will analyze the current position.</div>
+            </div>
+          </div>
+          <div class="fen-tools">
+            <input id="fenInput" type="text" spellcheck="false" aria-label="FEN input">
+            <button id="loadFenBtn" class="ghost-button" type="button">Load FEN</button>
+            <button id="copyFenBtn" class="ghost-button" type="button">Copy FEN</button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Captured</h3>
+          <div class="captures">
+            <div>
+              <span class="mini-label">White</span>
+              <div id="capturedWhite" class="captured-line"></div>
+            </div>
+            <div>
+              <span class="mini-label">Black</span>
+              <div id="capturedBlack" class="captured-line"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section move-section">
+          <h3>Moves</h3>
+          <ol id="moveList" class="move-list"></ol>
+        </section>
+      </aside>
+    </section>
+    <footer class="app-footer">
+      <span>Analysis and bot play use <a href="https://stockfishchess.org/" rel="noopener noreferrer" target="_blank">Stockfish</a>, an open-source chess engine licensed under GPLv3.</span>
+      <span>Move legality uses <a href="https://github.com/jhlywa/chess.js" rel="noopener noreferrer" target="_blank">chess.js</a>.</span>
+    </footer>
+  </main>
+
+  <dialog id="promotionDialog" class="promotion-dialog">
+    <form method="dialog">
+      <p>Promote pawn</p>
+      <div class="promotion-options">
+        <button value="q" type="submit">♕</button>
+        <button value="r" type="submit">♖</button>
+        <button value="b" type="submit">♗</button>
+        <button value="n" type="submit">♘</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
