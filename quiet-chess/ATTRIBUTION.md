@@ -10,4 +10,9 @@ This browser chess app uses the following open-source projects:
 - chess.js, a JavaScript chess move generation and validation library.
   - Source: https://github.com/jhlywa/chess.js
 
+- Cburnett SVG chess pieces from Wikimedia Commons, used as the board piece set.
+  - Author: Cburnett
+  - Source: https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces
+  - License options listed by Wikimedia include BSD, GPL, GFDL, and CC BY-SA 3.0.
+
 This app is a non-commercial personal project.

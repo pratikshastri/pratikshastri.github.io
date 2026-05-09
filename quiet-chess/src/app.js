@@ -638,16 +638,14 @@ function formatPv(pv, fen = state.analysisFen) {
 }
 
 function createPiece(piece) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("aria-hidden", "true");
-  svg.dataset.type = piece.type;
-
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("class", "piece-shape");
-  group.append(...pieceShapes(piece.type).map((node) => node));
-  svg.append(group);
-  return svg;
+  const image = document.createElement("img");
+  const colorPrefix = piece.color === "w" ? "l" : "d";
+  image.src = `./assets/pieces/cburnett/${colorPrefix}${piece.type}.svg`;
+  image.alt = "";
+  image.decoding = "async";
+  image.draggable = false;
+  image.dataset.type = piece.type;
+  return image;
 }
 
 let audioContext = null;
@@ -714,80 +712,6 @@ function createCapturedPiece(color, type) {
   icon.setAttribute("class", "piece " + (color === "w" ? "white" : "black"));
   span.append(icon);
   return span;
-}
-
-function svgNode(tag, attrs) {
-  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const [key, value] of Object.entries(attrs)) {
-    node.setAttribute(key, value);
-  }
-  return node;
-}
-
-function pieceShapes(type) {
-  const base = [
-    svgNode("path", { d: "M15 84 H85 V92 H15 Z" }),
-    svgNode("path", { d: "M24 73 H76 L84 84 H16 Z" })
-  ];
-
-  if (type === "p") {
-    return [
-      svgNode("circle", { cx: 50, cy: 20, r: 14 }),
-      svgNode("path", { d: "M33 72 C35 54 42 38 50 38 C58 38 65 54 67 72 Z" }),
-      svgNode("path", { d: "M30 70 H70 V77 H30 Z" }),
-      ...base
-    ];
-  }
-
-  if (type === "n") {
-    return [
-      svgNode("path", { d: "M24 75 C27 58 35 47 47 36 C39 28 41 16 54 10 C69 13 78 28 81 45 C71 43 64 46 60 53 C68 57 76 65 79 75 Z" }),
-      svgNode("path", { d: "M47 27 L33 39 L53 41 Z" }),
-      svgNode("path", { d: "M57 43 C49 52 45 62 43 70", class: "piece-cut" }),
-      svgNode("circle", { cx: 60, cy: 29, r: 3.5 }),
-      ...base
-    ];
-  }
-
-  if (type === "b") {
-    return [
-      svgNode("circle", { cx: 50, cy: 12, r: 8 }),
-      svgNode("path", { d: "M32 72 C24 50 32 29 50 20 C68 29 76 50 68 72 Z" }),
-      svgNode("path", { d: "M43 30 L62 52", class: "piece-cut" }),
-      svgNode("path", { d: "M32 70 H68 V78 H32 Z" }),
-      ...base
-    ];
-  }
-
-  if (type === "r") {
-    return [
-      svgNode("path", { d: "M22 18 H36 V32 H43 V18 H57 V32 H64 V18 H78 V41 H71 V72 H29 V41 H22 Z" }),
-      svgNode("path", { d: "M29 45 H71", class: "piece-cut" }),
-      svgNode("path", { d: "M29 62 H71", class: "piece-cut" }),
-      ...base
-    ];
-  }
-
-  if (type === "q") {
-    return [
-      svgNode("circle", { cx: 18, cy: 29, r: 6 }),
-      svgNode("circle", { cx: 35, cy: 16, r: 6 }),
-      svgNode("circle", { cx: 50, cy: 10, r: 7 }),
-      svgNode("circle", { cx: 65, cy: 16, r: 6 }),
-      svgNode("circle", { cx: 82, cy: 29, r: 6 }),
-      svgNode("path", { d: "M21 72 L17 37 L35 55 L50 23 L65 55 L83 37 L79 72 Z" }),
-      svgNode("path", { d: "M25 62 H75", class: "piece-cut" }),
-      ...base
-    ];
-  }
-
-  return [
-    svgNode("path", { d: "M45 6 H55 V23 H68 V33 H55 V49 H45 V33 H32 V23 H45 Z" }),
-    svgNode("path", { d: "M29 72 C22 54 30 38 44 32 H56 C70 38 78 54 71 72 Z" }),
-    svgNode("circle", { cx: 50, cy: 48, r: 12 }),
-    svgNode("path", { d: "M31 70 H69 V78 H31 Z" }),
-    ...base
-  ];
 }
 
 els.globalPlayBtn.addEventListener("click", () => {
