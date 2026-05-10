@@ -755,19 +755,24 @@ function createPiece(piece) {
 
 let audioContext = null;
 let audioMaster = null;
+let audioOutput = null;
+let audioPrimed = false;
 
 function getAudioContext() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
   if (!audioContext) {
     audioContext = new AudioContextClass();
+    audioOutput = audioContext.createGain();
+    audioOutput.gain.setValueAtTime(1.35, audioContext.currentTime);
     audioMaster = audioContext.createDynamicsCompressor();
-    audioMaster.threshold.setValueAtTime(-12, audioContext.currentTime);
-    audioMaster.knee.setValueAtTime(16, audioContext.currentTime);
-    audioMaster.ratio.setValueAtTime(8, audioContext.currentTime);
-    audioMaster.attack.setValueAtTime(0.002, audioContext.currentTime);
-    audioMaster.release.setValueAtTime(0.08, audioContext.currentTime);
-    audioMaster.connect(audioContext.destination);
+    audioMaster.threshold.setValueAtTime(-18, audioContext.currentTime);
+    audioMaster.knee.setValueAtTime(10, audioContext.currentTime);
+    audioMaster.ratio.setValueAtTime(10, audioContext.currentTime);
+    audioMaster.attack.setValueAtTime(0.001, audioContext.currentTime);
+    audioMaster.release.setValueAtTime(0.12, audioContext.currentTime);
+    audioMaster.connect(audioOutput);
+    audioOutput.connect(audioContext.destination);
   }
   return audioContext;
 }
@@ -776,38 +781,71 @@ function playMoveSound(move) {
   const context = getAudioContext();
   if (!context) return;
   if (context.state === "suspended") {
-    context.resume().catch(() => {});
+    context.resume().then(() => playMoveThud(context, move)).catch(() => {});
+    return;
   }
+  playMoveThud(context, move);
+}
 
+function playMoveThud(context, move) {
   if (state.chess.isCheckmate()) {
     playCheckmateSound(context);
   } else if (move.captured) {
-    playTap(context, 155, 0.07, 0, 0.42);
-    playTap(context, 95, 0.065, 0.065, 0.34);
+    playThud(context, 116, 58, 0, 0.98, 0.12);
+    playThud(context, 82, 42, 0.055, 0.82, 0.14);
   } else {
-    playTap(context, 140, 0.07, 0, 0.38);
+    playThud(context, 96, 46, 0, 0.88, 0.105);
   }
 }
 
-function playTap(context, frequency, duration, delay, volume = 0.38) {
+function unlockMoveAudio() {
+  if (audioPrimed) return;
+  audioPrimed = true;
+  const context = getAudioContext();
+  if (!context) return;
+  if (context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+  playThud(context, 72, 72, 0, 0.001, 0.02);
+}
+
+function playThud(context, startFrequency, endFrequency, delay, volume = 0.88, duration = 0.105) {
   const start = context.currentTime + delay;
-  const oscillator = context.createOscillator();
+  const body = context.createOscillator();
+  const click = context.createOscillator();
   const gain = context.createGain();
-  oscillator.type = "triangle";
-  oscillator.frequency.setValueAtTime(frequency, start);
+  const clickGain = context.createGain();
+
+  body.type = "sine";
+  body.frequency.setValueAtTime(startFrequency, start);
+  body.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
+
+  click.type = "triangle";
+  click.frequency.setValueAtTime(startFrequency * 2.6, start);
+  click.frequency.exponentialRampToValueAtTime(startFrequency * 1.1, start + Math.min(0.045, duration));
+
   gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(volume, start + 0.006);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.004);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  oscillator.connect(gain);
+
+  clickGain.gain.setValueAtTime(0.0001, start);
+  clickGain.gain.exponentialRampToValueAtTime(volume * 0.28, start + 0.002);
+  clickGain.gain.exponentialRampToValueAtTime(0.0001, start + Math.min(0.045, duration));
+
+  body.connect(gain);
+  click.connect(clickGain);
   gain.connect(audioMaster || context.destination);
-  oscillator.start(start);
-  oscillator.stop(start + duration + 0.01);
+  clickGain.connect(audioMaster || context.destination);
+  body.start(start);
+  click.start(start);
+  body.stop(start + duration + 0.02);
+  click.stop(start + Math.min(0.055, duration + 0.01));
 }
 
 function playCheckmateSound(context) {
-  playTap(context, 196, 0.085, 0, 0.46);
-  playTap(context, 146.8, 0.095, 0.09, 0.4);
-  playTap(context, 98, 0.13, 0.2, 0.5);
+  playThud(context, 138, 62, 0, 1, 0.12);
+  playThud(context, 104, 48, 0.09, 0.92, 0.14);
+  playThud(context, 78, 34, 0.2, 1, 0.18);
 }
 
 function createCapturedPiece(color, type) {
@@ -822,6 +860,8 @@ function createCapturedPiece(color, type) {
 els.globalPlayBtn.addEventListener("click", () => {
   if (state.screen === "analysis") enterSetup();
 });
+window.addEventListener("pointerdown", unlockMoveAudio, { once: true, passive: true });
+window.addEventListener("touchstart", unlockMoveAudio, { once: true, passive: true });
 els.globalAnalysisBtn.addEventListener("click", enterAnalysis);
 els.playBotModeBtn.addEventListener("click", () => setSetupGameType("bot"));
 els.playFriendModeBtn.addEventListener("click", () => setSetupGameType("friend"));
