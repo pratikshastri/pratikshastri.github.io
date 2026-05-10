@@ -263,8 +263,8 @@ input:focus-visible {
 
 .board-wrap {
   display: grid;
-  grid-template-rows: auto auto;
-  gap: 10px;
+  grid-template-rows: auto auto auto auto;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -623,6 +623,11 @@ input[type="checkbox"]:focus-visible {
   margin-bottom: 12px;
 }
 
+.setup-screen .captures-section,
+.setup-screen .move-section {
+  display: none;
+}
+
 .game-summary {
   display: grid;
   gap: 9px;
@@ -645,6 +650,35 @@ input[type="checkbox"]:focus-visible {
   color: var(--ink);
   font-size: 0.98rem;
   font-weight: 560;
+}
+
+.clock-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100%, 690px);
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.clock-rail strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.08rem;
+  font-weight: 650;
+}
+
+.clock-rail.active {
+  border-color: rgba(140, 107, 73, 0.32);
+  background: var(--accent-soft);
+}
+
+.clock-rail.flagged {
+  border-color: rgba(151, 63, 73, 0.36);
+  background: rgba(151, 63, 73, 0.08);
+  color: var(--danger);
 }
 
 .hidden {
@@ -948,20 +982,26 @@ input[type="checkbox"]:focus-visible {
 
 .game-focus .board-wrap {
   display: grid;
-  grid-template-rows: auto;
+  grid-template-rows: auto auto auto auto;
   place-items: center;
+  padding-top: 58px;
 }
 
 .game-focus .board-frame {
   width: 100%;
-  padding: 56px 0 12px;
+  padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
 
 .game-focus .board-with-coords {
-  width: min(calc(100vw - 36px), calc(100vh - 112px), 880px);
+  width: min(calc(100vw - 36px), calc(100vh - 190px), 880px);
+  max-width: calc(100vw - 36px);
+}
+
+.game-focus .clock-rail {
+  width: min(calc(100vw - 36px), calc(100vh - 190px), 880px);
   max-width: calc(100vw - 36px);
 }
 
@@ -1087,15 +1127,26 @@ input[type="checkbox"]:focus-visible {
 
   .game-focus .board-wrap {
     place-items: start center;
+    padding-top: 58px;
   }
 
   .game-focus .board-frame {
-    padding-top: 72px;
+    padding-top: 0;
   }
 
   .game-focus .board-with-coords {
     max-width: calc(100vw - 18px);
-    width: min(calc(100vw - 18px), calc(100vh - 112px));
+    width: min(calc(100vw - 18px), calc(100vh - 176px));
+  }
+
+  .game-focus .clock-rail {
+    max-width: calc(100vw - 18px);
+    width: min(calc(100vw - 18px), calc(100vh - 176px));
+    min-height: 34px;
+  }
+
+  .clock-rail strong {
+    font-size: 0.98rem;
   }
 
   .game-focus .under-board {
@@ -1131,6 +1182,7 @@ input[type="checkbox"]:focus-visible {
   .game-tools {
     gap: 6px;
   }
+
 }
 
 @media (max-width: 560px) {

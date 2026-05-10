@@ -23,6 +23,10 @@ const els = {
   gameDetailText: document.querySelector("#gameDetailText"),
   sideSelect: document.querySelector("#sideSelect"),
   difficultySelect: document.querySelector("#difficultySelect"),
+  clockSelect: document.querySelector("#clockSelect"),
+  clockOption: document.querySelector(".clock-option"),
+  whiteClock: document.querySelector("#whiteClock"),
+  blackClock: document.querySelector("#blackClock"),
   autoFlipToggle: document.querySelector("#autoFlipToggle"),
   boardQuitBtn: document.querySelector("#boardQuitBtn"),
   flipBtn: document.querySelector("#flipBtn"),
@@ -58,6 +62,11 @@ const state = {
   locked: false,
   humanSide: "w",
   difficulty: "medium",
+  clockInitial: 0,
+  clocks: { w: 0, b: 0 },
+  clockLastTick: null,
+  timedOut: null,
+  clockTimer: null,
   pendingPromotion: null,
   historyCursor: 0,
   analysisToken: 0,
@@ -205,10 +214,13 @@ function renderCoordinates() {
 
 function resetPosition() {
   analysisEngine.stopAnalysis();
+  stopClock();
   state.chess = new Chess();
   state.selected = null;
   state.legalMoves = [];
   state.locked = false;
+  state.timedOut = null;
+  state.clockLastTick = null;
   state.pendingPromotion = null;
   state.historyCursor = 0;
   state.analysisToken += 1;
@@ -231,6 +243,7 @@ function showPanel(name) {
 function renderShellState() {
   const gameFocus = state.screen === "game";
   els.appShell.classList.toggle("game-focus", gameFocus);
+  els.appShell.classList.toggle("setup-screen", state.screen === "setup");
 }
 
 function setGlobalActive(screen) {
@@ -258,6 +271,8 @@ function startGame(type) {
   state.gameType = type;
   state.humanSide = els.sideSelect.value;
   state.difficulty = els.difficultySelect.value;
+  state.clockInitial = type === "friend" ? Number(els.clockSelect.value) : 0;
+  state.clocks = { w: state.clockInitial, b: state.clockInitial };
   state.orientation = type === "bot" && state.humanSide === "b" && !els.autoFlipToggle.checked ? "black" : "white";
   state.historyCursor = 0;
   els.gameModeText.textContent = type === "bot" ? "Bot" : "Friend";
@@ -266,6 +281,7 @@ function startGame(type) {
   setGlobalActive("game");
   renderShellState();
   updateAll();
+  startClock();
   jumpToBoard();
   maybeBotMove();
 }
@@ -284,6 +300,7 @@ function renderSetupOptions() {
   els.botOptions.forEach((option) => {
     option.hidden = !isBot;
   });
+  els.clockOption.hidden = isBot;
   setButtonContent(els.startGameBtn, isBot ? "Bot game" : "Friend game", "play");
 }
 
@@ -291,6 +308,9 @@ function jumpToBoard() {
   requestAnimationFrame(() => {
     if (state.screen === "game") {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      });
       return;
     }
     els.board.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
@@ -299,12 +319,95 @@ function jumpToBoard() {
 
 function gameDetailText(type) {
   if (type === "friend") {
-    return els.autoFlipToggle.checked ? "Local play, auto-flip on" : "Local play";
+    const clock = Number(els.clockSelect.value);
+    const clockText = clock ? `${formatClockTime(clock)} clock` : "Untimed";
+    return els.autoFlipToggle.checked ? `Local play, ${clockText}, auto-flip on` : `Local play, ${clockText}`;
   }
 
   const side = els.sideSelect.value === "w" ? "White" : "Black";
   const level = els.difficultySelect.options[els.difficultySelect.selectedIndex].textContent;
   return `${side} vs ${level}`;
+}
+
+function hasActiveClock() {
+  return state.screen === "game" && state.gameType === "friend" && state.clockInitial > 0 && !state.timedOut;
+}
+
+function startClock() {
+  stopClock();
+  if (!hasActiveClock() || state.chess.isGameOver() || !isAtLivePosition()) {
+    renderClocks();
+    return;
+  }
+  state.clockLastTick = performance.now();
+  state.clockTimer = window.setInterval(tickClock, 250);
+  renderClocks();
+}
+
+function stopClock() {
+  if (state.clockTimer) {
+    window.clearInterval(state.clockTimer);
+  }
+  state.clockTimer = null;
+  state.clockLastTick = null;
+}
+
+function tickClock() {
+  if (!hasActiveClock() || state.chess.isGameOver() || !isAtLivePosition()) {
+    stopClock();
+    renderClocks();
+    return;
+  }
+
+  const now = performance.now();
+  const elapsed = state.clockLastTick ? (now - state.clockLastTick) / 1000 : 0;
+  state.clockLastTick = now;
+
+  const turn = state.chess.turn();
+  state.clocks[turn] = Math.max(0, state.clocks[turn] - elapsed);
+  if (state.clocks[turn] <= 0) {
+    state.timedOut = turn;
+    state.locked = true;
+    clearSelection();
+    stopClock();
+    updateAll();
+    return;
+  }
+  renderClocks();
+}
+
+function syncClockAfterPositionChange() {
+  if (hasActiveClock() && !state.chess.isGameOver() && isAtLivePosition()) {
+    startClock();
+  } else {
+    stopClock();
+    renderClocks();
+  }
+}
+
+function renderClocks() {
+  const showClocks = state.screen === "game" && state.gameType === "friend" && state.clockInitial > 0;
+  els.whiteClock.hidden = !showClocks;
+  els.blackClock.hidden = !showClocks;
+  if (!showClocks) {
+    els.whiteClock.classList.remove("active", "flagged");
+    els.blackClock.classList.remove("active", "flagged");
+    return;
+  }
+
+  els.whiteClock.querySelector("strong").textContent = formatClockTime(state.clocks.w);
+  els.blackClock.querySelector("strong").textContent = formatClockTime(state.clocks.b);
+  els.whiteClock.classList.toggle("active", state.chess.turn() === "w" && !state.timedOut && isAtLivePosition());
+  els.blackClock.classList.toggle("active", state.chess.turn() === "b" && !state.timedOut && isAtLivePosition());
+  els.whiteClock.classList.toggle("flagged", state.timedOut === "w");
+  els.blackClock.classList.toggle("flagged", state.timedOut === "b");
+}
+
+function formatClockTime(seconds) {
+  const total = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(total / 60);
+  const remainingSeconds = total % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function enterAnalysis() {
@@ -377,6 +480,8 @@ function maybeMove(move) {
 }
 
 function makeMove(move) {
+  tickClock();
+  if (state.timedOut) return null;
   const played = state.chess.move(move);
   if (!played) return null;
 
@@ -392,6 +497,7 @@ function makeMove(move) {
 
   playMoveSound(played);
   updateAll();
+  syncClockAfterPositionChange();
   maybeBotMove();
   return played;
 }
@@ -439,6 +545,7 @@ function updateAll() {
   renderBoard();
   renderMoves();
   renderCaptures();
+  renderClocks();
   updateFen();
   updateButtons();
   updateStatus();
@@ -459,7 +566,7 @@ function updateButtons() {
   els.gameForwardBtn.disabled = els.forwardBtn.disabled;
   els.flipBtn.disabled = state.locked;
   els.undoBtn.hidden = state.screen !== "game";
-  els.undoBtn.disabled = state.screen !== "game" || historyLength === 0 || state.locked || !isAtLivePosition();
+  els.undoBtn.disabled = state.screen !== "game" || historyLength === 0 || state.locked || !isAtLivePosition() || state.timedOut;
   els.gameUndoBtn.disabled = els.undoBtn.disabled;
 
   if (state.screen === "analysis") {
@@ -475,12 +582,19 @@ function updateButtons() {
 }
 
 function updateStatus() {
-  if (state.locked) return;
-
   if (state.screen === "setup") {
     setStatus("Choose a game", "Start against Stockfish or play locally with a friend.", "New Game");
     return;
   }
+
+  if (state.timedOut) {
+    const loser = state.timedOut === "w" ? "White" : "Black";
+    const winner = state.timedOut === "w" ? "Black" : "White";
+    setStatus(`${winner} wins on time`, `${loser}'s clock reached zero.`, "Flag");
+    return;
+  }
+
+  if (state.locked) return;
 
   if (state.screen === "game" && !isAtLivePosition()) {
     setStatus("Reviewing moves", "Use the arrows to return to the live position before playing.", "Read only");
@@ -548,6 +662,7 @@ function flipBoard() {
 function undo() {
   if (state.screen !== "game" || state.locked || !isAtLivePosition()) return;
   analysisEngine.stopAnalysis();
+  stopClock();
 
   if (state.gameType === "bot") {
     state.chess.undo();
@@ -561,6 +676,7 @@ function undo() {
   state.historyCursor = liveHistory().length;
   clearSelection();
   updateAll();
+  syncClockAfterPositionChange();
 }
 
 function navigateBack() {
@@ -578,6 +694,7 @@ function navigateBack() {
   }
 
   if (state.screen !== "game" || state.historyCursor <= 0) return;
+  stopClock();
   state.historyCursor -= 1;
   clearSelection();
   updateAll();
@@ -605,6 +722,7 @@ function navigateForward() {
   state.historyCursor += 1;
   clearSelection();
   updateAll();
+  syncClockAfterPositionChange();
 }
 
 function loadFen() {

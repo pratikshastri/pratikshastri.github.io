@@ -22,12 +22,20 @@
 
     <section class="game-layout">
       <div class="board-wrap">
+        <div id="blackClock" class="clock-rail black-clock" hidden>
+          <span class="mini-label">Black</span>
+          <strong>10:00</strong>
+        </div>
         <div class="board-frame">
           <div id="boardWithCoords" class="board-with-coords">
             <div id="rankCoords" class="rank-coords" aria-hidden="true"></div>
             <div id="board" class="board" aria-label="Chess board"></div>
             <div id="fileCoords" class="file-coords" aria-hidden="true"></div>
           </div>
+        </div>
+        <div id="whiteClock" class="clock-rail white-clock" hidden>
+          <span class="mini-label">White</span>
+          <strong>10:00</strong>
         </div>
         <div class="under-board">
           <button id="boardQuitBtn" class="danger-button focus-quit" type="button">Quit</button>
@@ -73,6 +81,15 @@
               </select>
             </label>
           </div>
+          <label class="clock-option setup-controls">
+            Clock
+            <select id="clockSelect">
+              <option value="0">Untimed</option>
+              <option value="300">5 minutes</option>
+              <option value="600" selected>10 minutes</option>
+              <option value="900">15 minutes</option>
+            </select>
+          </label>
           <label class="check-row setup-controls">
             <input id="autoFlipToggle" type="checkbox">
             Flip board after each move
