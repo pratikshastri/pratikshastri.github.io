@@ -513,12 +513,17 @@ function renderClocks() {
     return;
   }
 
-  els.whiteClock.querySelector("strong").textContent = formatClockTime(state.clocks.w);
-  els.blackClock.querySelector("strong").textContent = formatClockTime(state.clocks.b);
-  els.whiteClock.classList.toggle("active", state.chess.turn() === "w" && !state.timedOut && isAtLivePosition());
-  els.blackClock.classList.toggle("active", state.chess.turn() === "b" && !state.timedOut && isAtLivePosition());
-  els.whiteClock.classList.toggle("flagged", state.timedOut === "w");
-  els.blackClock.classList.toggle("flagged", state.timedOut === "b");
+  const topColor = state.orientation === "white" ? "b" : "w";
+  const bottomColor = state.orientation === "white" ? "w" : "b";
+  renderClockRail(els.blackClock, topColor);
+  renderClockRail(els.whiteClock, bottomColor);
+}
+
+function renderClockRail(clockEl, color) {
+  clockEl.querySelector(".mini-label").textContent = color === "w" ? "White" : "Black";
+  clockEl.querySelector("strong").textContent = formatClockTime(state.clocks[color]);
+  clockEl.classList.toggle("active", state.chess.turn() === color && !state.timedOut && isAtLivePosition());
+  clockEl.classList.toggle("flagged", state.timedOut === color);
 }
 
 function formatClockTime(seconds) {
@@ -926,6 +931,7 @@ function updateFen() {
 function flipBoard() {
   state.orientation = state.orientation === "white" ? "black" : "white";
   renderBoard();
+  renderClocks();
 }
 
 function undo() {
@@ -1206,99 +1212,74 @@ function createPiece(piece) {
   return image;
 }
 
-let audioContext = null;
-let audioMaster = null;
-let audioOutput = null;
+const soundFiles = {
+  move: "./assets/sounds/move-thud.wav",
+  capture: "./assets/sounds/capture-thud.wav",
+  checkmate: "./assets/sounds/checkmate-thud.wav"
+};
+const soundVolumes = {
+  move: 0.92,
+  capture: 0.92,
+  checkmate: 0.94
+};
+const soundPools = new Map();
 let audioPrimed = false;
+let lastSoundAt = 0;
 
-function getAudioContext() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
-  if (!audioContext) {
-    audioContext = new AudioContextClass();
-    audioOutput = audioContext.createGain();
-    audioOutput.gain.setValueAtTime(1.35, audioContext.currentTime);
-    audioMaster = audioContext.createDynamicsCompressor();
-    audioMaster.threshold.setValueAtTime(-18, audioContext.currentTime);
-    audioMaster.knee.setValueAtTime(10, audioContext.currentTime);
-    audioMaster.ratio.setValueAtTime(10, audioContext.currentTime);
-    audioMaster.attack.setValueAtTime(0.001, audioContext.currentTime);
-    audioMaster.release.setValueAtTime(0.12, audioContext.currentTime);
-    audioMaster.connect(audioOutput);
-    audioOutput.connect(audioContext.destination);
-  }
-  return audioContext;
+function initSoundPools() {
+  if (soundPools.size) return;
+  Object.entries(soundFiles).forEach(([name, src]) => {
+    const pool = Array.from({ length: 4 }, () => {
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      audio.volume = soundVolumes[name] ?? 0.9;
+      audio.load();
+      return audio;
+    });
+    soundPools.set(name, pool);
+  });
 }
 
 function playMoveSound(move) {
-  const context = getAudioContext();
-  if (!context) return;
-  if (context.state === "suspended") {
-    context.resume().then(() => playMoveThud(context, move)).catch(() => {});
-    return;
-  }
-  playMoveThud(context, move);
-}
-
-function playMoveThud(context, move) {
   if (state.chess.isCheckmate()) {
-    playCheckmateSound(context);
+    playSound("checkmate");
   } else if (move.captured) {
-    playThud(context, 116, 58, 0, 0.98, 0.12);
-    playThud(context, 82, 42, 0.055, 0.82, 0.14);
+    playSound("capture");
   } else {
-    playThud(context, 96, 46, 0, 0.88, 0.105);
+    playSound("move");
   }
 }
 
 function unlockMoveAudio() {
   if (audioPrimed) return;
   audioPrimed = true;
-  const context = getAudioContext();
-  if (!context) return;
-  if (context.state === "suspended") {
-    context.resume().catch(() => {});
-  }
-  playThud(context, 72, 72, 0, 0.001, 0.02);
+  initSoundPools();
+  const firstMoveSound = soundPools.get("move")?.[0];
+  if (!firstMoveSound) return;
+  firstMoveSound.volume = 0;
+  firstMoveSound.play()
+    .then(() => {
+      firstMoveSound.pause();
+      firstMoveSound.currentTime = 0;
+      firstMoveSound.volume = soundVolumes.move;
+    })
+    .catch(() => {
+      firstMoveSound.volume = soundVolumes.move;
+    });
 }
 
-function playThud(context, startFrequency, endFrequency, delay, volume = 0.88, duration = 0.105) {
-  const start = context.currentTime + delay;
-  const body = context.createOscillator();
-  const click = context.createOscillator();
-  const gain = context.createGain();
-  const clickGain = context.createGain();
-
-  body.type = "sine";
-  body.frequency.setValueAtTime(startFrequency, start);
-  body.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
-
-  click.type = "triangle";
-  click.frequency.setValueAtTime(startFrequency * 2.6, start);
-  click.frequency.exponentialRampToValueAtTime(startFrequency * 1.1, start + Math.min(0.045, duration));
-
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(volume, start + 0.004);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-
-  clickGain.gain.setValueAtTime(0.0001, start);
-  clickGain.gain.exponentialRampToValueAtTime(volume * 0.28, start + 0.002);
-  clickGain.gain.exponentialRampToValueAtTime(0.0001, start + Math.min(0.045, duration));
-
-  body.connect(gain);
-  click.connect(clickGain);
-  gain.connect(audioMaster || context.destination);
-  clickGain.connect(audioMaster || context.destination);
-  body.start(start);
-  click.start(start);
-  body.stop(start + duration + 0.02);
-  click.stop(start + Math.min(0.055, duration + 0.01));
-}
-
-function playCheckmateSound(context) {
-  playThud(context, 138, 62, 0, 1, 0.12);
-  playThud(context, 104, 48, 0.09, 0.92, 0.14);
-  playThud(context, 78, 34, 0.2, 1, 0.18);
+function playSound(name) {
+  initSoundPools();
+  const now = performance.now();
+  if (now - lastSoundAt < 45) return;
+  const pool = soundPools.get(name);
+  if (!pool) return;
+  const audio = pool.find((candidate) => candidate.paused || candidate.ended) || pool[0];
+  audio.pause();
+  audio.currentTime = 0;
+  audio.volume = soundVolumes[name] ?? 0.9;
+  audio.play().catch(() => {});
+  lastSoundAt = now;
 }
 
 function createCapturedPiece(color, type) {
