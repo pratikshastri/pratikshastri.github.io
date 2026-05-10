@@ -435,10 +435,9 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: calc(100vh - 116px);
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(251, 250, 246, 0.72);
@@ -844,6 +843,7 @@ input[type="checkbox"]:focus-visible {
 
 .move-section {
   min-height: 180px;
+  max-height: none;
   overflow: visible;
 }
 
@@ -856,6 +856,7 @@ input[type="checkbox"]:focus-visible {
   color: var(--ink);
   font-weight: 560;
   list-style: none;
+  overflow: visible;
 }
 
 .move-list li {
