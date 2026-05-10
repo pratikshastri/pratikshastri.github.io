@@ -5,6 +5,7 @@ const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
 const els = {
+  appShell: document.querySelector(".app-shell"),
   board: document.querySelector("#board"),
   rankCoords: document.querySelector("#rankCoords"),
   fileCoords: document.querySelector("#fileCoords"),
@@ -14,19 +15,26 @@ const els = {
   statusPill: document.querySelector("#statusPill"),
   statusTitle: document.querySelector("#statusTitle"),
   statusDetail: document.querySelector("#statusDetail"),
-  startBotBtn: document.querySelector("#startBotBtn"),
-  startFriendBtn: document.querySelector("#startFriendBtn"),
+  playBotModeBtn: document.querySelector("#playBotModeBtn"),
+  playFriendModeBtn: document.querySelector("#playFriendModeBtn"),
+  botOptions: [...document.querySelectorAll(".bot-option")],
+  startGameBtn: document.querySelector("#startGameBtn"),
   gameModeText: document.querySelector("#gameModeText"),
   gameDetailText: document.querySelector("#gameDetailText"),
   sideSelect: document.querySelector("#sideSelect"),
   difficultySelect: document.querySelector("#difficultySelect"),
   autoFlipToggle: document.querySelector("#autoFlipToggle"),
+  boardQuitBtn: document.querySelector("#boardQuitBtn"),
   flipBtn: document.querySelector("#flipBtn"),
   undoBtn: document.querySelector("#undoBtn"),
   quitBtn: document.querySelector("#quitBtn"),
   backBtn: document.querySelector("#backBtn"),
   forwardBtn: document.querySelector("#forwardBtn"),
+  gameBackBtn: document.querySelector("#gameBackBtn"),
+  gameForwardBtn: document.querySelector("#gameForwardBtn"),
+  gameUndoBtn: document.querySelector("#gameUndoBtn"),
   cursorLabel: document.querySelector("#cursorLabel"),
+  gameCursorLabel: document.querySelector("#gameCursorLabel"),
   moveList: document.querySelector("#moveList"),
   capturedWhite: document.querySelector("#capturedWhite"),
   capturedBlack: document.querySelector("#capturedBlack"),
@@ -43,6 +51,7 @@ const state = {
   chess: new Chess(),
   screen: "setup",
   gameType: null,
+  setupGameType: "bot",
   orientation: "white",
   selected: null,
   legalMoves: [],
@@ -59,6 +68,58 @@ const state = {
 
 const moveEngine = new StockfishClient();
 const analysisEngine = new StockfishClient();
+
+const icons = {
+  analysis: '<path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 14 4-4 3 3 5-7"/>',
+  bot: '<rect x="6" y="8" width="12" height="10" rx="2"/><path d="M12 8V4"/><path d="M8 13h.01"/><path d="M16 13h.01"/><path d="M9 20h6"/>',
+  chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+  chevronRight: '<path d="m9 18 6-6-6-6"/>',
+  copy: '<rect x="8" y="8" width="10" height="10" rx="2"/><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  flip: '<path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 9V5h4"/><path d="M6 15v4H2"/>',
+  friend: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  play: '<path d="m8 5 11 7-11 7Z"/>',
+  quit: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/>',
+  upload: '<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>'
+};
+
+function setButtonContent(button, label, iconName) {
+  const icon = icons[iconName];
+  if (!button || !icon) return;
+  button.replaceChildren();
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "btn-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  svg.innerHTML = icon;
+
+  const span = document.createElement("span");
+  span.className = "btn-label";
+  span.textContent = label;
+  button.append(svg, span);
+}
+
+function hydrateButtonIcons() {
+  [
+    [els.globalPlayBtn, "Play", "play"],
+    [els.globalAnalysisBtn, "Analysis", "analysis"],
+    [els.boardQuitBtn, "Quit", "quit"],
+    [els.backBtn, "Back", "chevronLeft"],
+    [els.forwardBtn, "Next", "chevronRight"],
+    [els.flipBtn, "Flip", "flip"],
+    [els.undoBtn, "Undo", "undo"],
+    [els.playBotModeBtn, "Bot", "bot"],
+    [els.playFriendModeBtn, "Friend", "friend"],
+    [els.gameBackBtn, "Back", "chevronLeft"],
+    [els.gameForwardBtn, "Next", "chevronRight"],
+    [els.gameUndoBtn, "Undo", "undo"],
+    [els.quitBtn, "Quit", "quit"],
+    [els.loadFenBtn, "Load", "upload"],
+    [els.copyFenBtn, "Copy", "copy"]
+  ].forEach(([button, label, iconName]) => setButtonContent(button, label, iconName));
+}
 
 function orderedSquares() {
   const fileOrder = state.orientation === "white" ? files : [...files].reverse();
@@ -167,6 +228,11 @@ function showPanel(name) {
   els.panels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.panel !== name));
 }
 
+function renderShellState() {
+  const gameFocus = state.screen === "game";
+  els.appShell.classList.toggle("game-focus", gameFocus);
+}
+
 function setGlobalActive(screen) {
   els.globalPlayBtn.classList.toggle("active", screen !== "analysis");
   els.globalAnalysisBtn.classList.toggle("active", screen === "analysis");
@@ -181,6 +247,8 @@ function enterSetup() {
   state.orientation = "white";
   showPanel("setup");
   setGlobalActive("setup");
+  renderShellState();
+  renderSetupOptions();
   updateAll();
 }
 
@@ -190,14 +258,43 @@ function startGame(type) {
   state.gameType = type;
   state.humanSide = els.sideSelect.value;
   state.difficulty = els.difficultySelect.value;
-  state.orientation = type === "bot" && state.humanSide === "b" ? "black" : "white";
+  state.orientation = type === "bot" && state.humanSide === "b" && !els.autoFlipToggle.checked ? "black" : "white";
   state.historyCursor = 0;
   els.gameModeText.textContent = type === "bot" ? "Bot" : "Friend";
   els.gameDetailText.textContent = gameDetailText(type);
   showPanel("game");
   setGlobalActive("game");
+  renderShellState();
   updateAll();
+  jumpToBoard();
   maybeBotMove();
+}
+
+function setSetupGameType(type) {
+  state.setupGameType = type;
+  renderSetupOptions();
+}
+
+function renderSetupOptions() {
+  const isBot = state.setupGameType === "bot";
+  els.playBotModeBtn.classList.toggle("active", isBot);
+  els.playFriendModeBtn.classList.toggle("active", !isBot);
+  els.playBotModeBtn.setAttribute("aria-pressed", String(isBot));
+  els.playFriendModeBtn.setAttribute("aria-pressed", String(!isBot));
+  els.botOptions.forEach((option) => {
+    option.hidden = !isBot;
+  });
+  setButtonContent(els.startGameBtn, isBot ? "Bot game" : "Friend game", "play");
+}
+
+function jumpToBoard() {
+  requestAnimationFrame(() => {
+    if (state.screen === "game") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+    els.board.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+  });
 }
 
 function gameDetailText(type) {
@@ -217,6 +314,7 @@ function enterAnalysis() {
   state.orientation = "white";
   showPanel("analysis");
   setGlobalActive("analysis");
+  renderShellState();
   updateAll();
 }
 
@@ -288,7 +386,7 @@ function makeMove(move) {
   }
   clearSelection();
 
-  if (state.screen === "game" && state.gameType === "friend" && els.autoFlipToggle.checked) {
+  if (state.screen === "game" && els.autoFlipToggle.checked) {
     flipBoard();
   }
 
@@ -318,6 +416,9 @@ async function maybeBotMove() {
     const played = state.chess.move(parseUciMove(move));
     if (played) {
       state.historyCursor = liveHistory().length;
+      if (els.autoFlipToggle.checked) {
+        flipBoard();
+      }
       playMoveSound(played);
     }
   }
@@ -354,9 +455,12 @@ function updateButtons() {
 
   els.backBtn.disabled = !canGoBack || state.locked;
   els.forwardBtn.disabled = !canGoForward || state.locked;
+  els.gameBackBtn.disabled = els.backBtn.disabled;
+  els.gameForwardBtn.disabled = els.forwardBtn.disabled;
   els.flipBtn.disabled = state.locked;
   els.undoBtn.hidden = state.screen !== "game";
   els.undoBtn.disabled = state.screen !== "game" || historyLength === 0 || state.locked || !isAtLivePosition();
+  els.gameUndoBtn.disabled = els.undoBtn.disabled;
 
   if (state.screen === "analysis") {
     els.cursorLabel.textContent = state.analysisRedo.length ? `Redo ${state.analysisRedo.length}` : "Explore";
@@ -367,6 +471,7 @@ function updateButtons() {
   } else {
     els.cursorLabel.textContent = "Start";
   }
+  els.gameCursorLabel.textContent = els.cursorLabel.textContent;
 }
 
 function updateStatus() {
@@ -718,8 +823,9 @@ els.globalPlayBtn.addEventListener("click", () => {
   if (state.screen === "analysis") enterSetup();
 });
 els.globalAnalysisBtn.addEventListener("click", enterAnalysis);
-els.startBotBtn.addEventListener("click", () => startGame("bot"));
-els.startFriendBtn.addEventListener("click", () => startGame("friend"));
+els.playBotModeBtn.addEventListener("click", () => setSetupGameType("bot"));
+els.playFriendModeBtn.addEventListener("click", () => setSetupGameType("friend"));
+els.startGameBtn.addEventListener("click", () => startGame(state.setupGameType));
 els.sideSelect.addEventListener("change", () => {
   state.humanSide = els.sideSelect.value;
   if (state.screen === "game" && state.gameType === "bot") {
@@ -731,9 +837,13 @@ els.difficultySelect.addEventListener("change", () => {
 });
 els.flipBtn.addEventListener("click", flipBoard);
 els.undoBtn.addEventListener("click", undo);
+els.gameUndoBtn.addEventListener("click", undo);
 els.quitBtn.addEventListener("click", enterSetup);
+els.boardQuitBtn.addEventListener("click", enterSetup);
 els.backBtn.addEventListener("click", navigateBack);
 els.forwardBtn.addEventListener("click", navigateForward);
+els.gameBackBtn.addEventListener("click", navigateBack);
+els.gameForwardBtn.addEventListener("click", navigateForward);
 els.loadFenBtn.addEventListener("click", loadFen);
 els.copyFenBtn.addEventListener("click", copyFen);
 els.promotionDialog.addEventListener("close", () => {
@@ -757,4 +867,5 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
+hydrateButtonIcons();
 enterSetup();

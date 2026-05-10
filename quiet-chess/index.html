@@ -30,6 +30,7 @@
           </div>
         </div>
         <div class="under-board">
+          <button id="boardQuitBtn" class="danger-button focus-quit" type="button">Quit</button>
           <button id="backBtn" class="ghost-button icon-button" type="button" aria-label="Previous move">‹</button>
           <span id="cursorLabel" class="cursor-label">Start</span>
           <button id="forwardBtn" class="ghost-button icon-button" type="button" aria-label="Next move">›</button>
@@ -39,7 +40,7 @@
       </div>
 
       <aside class="panel" aria-label="Game controls and status">
-        <section class="panel-section">
+        <section class="panel-section status-section">
           <div class="status-row">
             <span class="status-label">Position</span>
             <span id="statusPill" class="status-pill">Ready</span>
@@ -50,15 +51,19 @@
 
         <section class="panel-section mode-panel" data-panel="setup">
           <h3>New Game</h3>
+          <div class="play-mode-switch setup-controls" aria-label="Play mode">
+            <button id="playBotModeBtn" class="mode-choice active" type="button" aria-pressed="true">Bot</button>
+            <button id="playFriendModeBtn" class="mode-choice" type="button" aria-pressed="false">Friend</button>
+          </div>
           <div class="control-grid setup-controls">
-            <label>
+            <label class="bot-option">
               Side
               <select id="sideSelect">
                 <option value="w">White</option>
                 <option value="b">Black</option>
               </select>
             </label>
-            <label>
+            <label class="bot-option">
               Level
               <select id="difficultySelect">
                 <option value="easy">Easy</option>
@@ -72,13 +77,10 @@
             <input id="autoFlipToggle" type="checkbox">
             Flip board after each move
           </label>
-          <div class="choice-grid">
-            <button id="startBotBtn" class="primary-button" type="button">Play Bot</button>
-            <button id="startFriendBtn" class="ghost-button" type="button">Play Friend</button>
-          </div>
+          <button id="startGameBtn" class="primary-button full-button" type="button">Start Bot Game</button>
         </section>
 
-        <section class="panel-section mode-panel" data-panel="game">
+        <section class="panel-section mode-panel game-section" data-panel="game">
           <h3>Active Game</h3>
           <div class="game-summary">
             <div>
@@ -89,6 +91,12 @@
               <span class="mini-label">Details</span>
               <strong id="gameDetailText">White vs Medium</strong>
             </div>
+          </div>
+          <div class="game-tools" aria-label="Move controls">
+            <button id="gameBackBtn" class="ghost-button icon-button" type="button" aria-label="Previous move">‹</button>
+            <span id="gameCursorLabel" class="cursor-label">Start</span>
+            <button id="gameForwardBtn" class="ghost-button icon-button" type="button" aria-label="Next move">›</button>
+            <button id="gameUndoBtn" class="ghost-button" type="button">Undo</button>
           </div>
           <button id="quitBtn" class="danger-button" type="button">Quit Game</button>
         </section>
@@ -111,7 +119,7 @@
           </div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section captures-section">
           <h3>Captured</h3>
           <div class="captures">
             <div>
