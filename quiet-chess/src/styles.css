@@ -437,6 +437,7 @@ textarea:focus-visible {
   min-height: 0;
   max-height: calc(100vh - 116px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -843,7 +844,7 @@ input[type="checkbox"]:focus-visible {
 
 .move-section {
   min-height: 180px;
-  overflow: auto;
+  overflow: visible;
 }
 
 .move-list {
