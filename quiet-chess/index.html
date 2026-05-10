@@ -120,6 +120,11 @@
 
         <section class="panel-section mode-panel hidden" data-panel="analysis">
           <h3>Analysis Board</h3>
+          <div class="play-mode-switch analysis-mode-switch setup-controls" aria-label="Analysis mode">
+            <button id="freeAnalysisBtn" class="mode-choice active" type="button" aria-pressed="true">Free</button>
+            <button id="fenAnalysisBtn" class="mode-choice" type="button" aria-pressed="false">FEN</button>
+            <button id="pgnAnalysisBtn" class="mode-choice" type="button" aria-pressed="false">PGN</button>
+          </div>
           <div class="eval-card">
             <div class="eval-bar" aria-label="Engine evaluation">
               <span id="evalFill"></span>
@@ -129,9 +134,16 @@
               <div id="bestLine" class="best-line">Stockfish will analyze the current position.</div>
             </div>
           </div>
-          <div class="fen-tools">
-            <input id="fenInput" type="text" spellcheck="false" aria-label="FEN input">
+          <div id="fenTools" class="fen-tools analysis-tool">
+            <input id="fenInput" type="text" spellcheck="false" aria-label="FEN input" placeholder="Paste FEN">
             <button id="loadFenBtn" class="ghost-button" type="button">Load FEN</button>
+          </div>
+          <div id="pgnTools" class="fen-tools analysis-tool hidden">
+            <textarea id="pgnInput" spellcheck="false" aria-label="PGN input" placeholder="Paste PGN"></textarea>
+            <button id="loadPgnBtn" class="ghost-button" type="button">Load PGN</button>
+          </div>
+          <div class="fen-tools current-fen-tools">
+            <input id="currentFenInput" type="text" spellcheck="false" aria-label="Current FEN" readonly>
             <button id="copyFenBtn" class="ghost-button" type="button">Copy FEN</button>
           </div>
         </section>

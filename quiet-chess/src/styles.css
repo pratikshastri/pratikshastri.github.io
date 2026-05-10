@@ -248,7 +248,8 @@ button:disabled {
 
 button:focus-visible,
 select:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
@@ -503,6 +504,10 @@ input:focus-visible {
   background: rgba(255, 255, 255, 0.52);
 }
 
+.analysis-mode-switch {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .mode-choice {
   display: inline-flex;
   align-items: center;
@@ -541,7 +546,8 @@ label {
 }
 
 select,
-input[type="text"] {
+input[type="text"],
+textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -567,14 +573,23 @@ select {
   background-repeat: no-repeat;
 }
 
-input[type="text"] {
+input[type="text"],
+textarea {
   padding: 0 11px;
 }
 
 select:hover,
-input[type="text"]:hover {
+input[type="text"]:hover,
+textarea:hover {
   border-color: var(--line-strong);
   background-color: rgba(255, 255, 255, 0.9);
+}
+
+textarea {
+  min-height: 112px;
+  padding-block: 10px;
+  resize: vertical;
+  line-height: 1.35;
 }
 
 .check-row {
@@ -790,6 +805,15 @@ input[type="checkbox"]:focus-visible {
   grid-column: 1 / -1;
 }
 
+.fen-tools textarea {
+  grid-column: 1 / -1;
+}
+
+.current-fen-tools input {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
 .captures {
   display: grid;
   gap: 10px;
@@ -843,6 +867,26 @@ input[type="checkbox"]:focus-visible {
 .move-list li.current {
   border-color: rgba(140, 107, 73, 0.26);
   background: var(--accent-soft);
+}
+
+.move-list li.future-move {
+  color: var(--quiet);
+  opacity: 0.58;
+}
+
+.move-list li.branch-label {
+  grid-column: 1 / -1;
+  border: 0;
+  background: transparent;
+  color: var(--quiet);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.move-list li.branch-move {
+  border-color: rgba(151, 63, 73, 0.16);
+  background: rgba(151, 63, 73, 0.05);
 }
 
 .promotion-dialog {

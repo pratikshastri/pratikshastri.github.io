@@ -1,4 +1,4 @@
-import { Chess } from "../vendor/chess/chess.js";
+import { Chess, DEFAULT_POSITION } from "../vendor/chess/chess.js";
 import { StockfishClient } from "./engine.js";
 
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -43,8 +43,16 @@ const els = {
   capturedWhite: document.querySelector("#capturedWhite"),
   capturedBlack: document.querySelector("#capturedBlack"),
   promotionDialog: document.querySelector("#promotionDialog"),
+  freeAnalysisBtn: document.querySelector("#freeAnalysisBtn"),
+  fenAnalysisBtn: document.querySelector("#fenAnalysisBtn"),
+  pgnAnalysisBtn: document.querySelector("#pgnAnalysisBtn"),
+  fenTools: document.querySelector("#fenTools"),
   fenInput: document.querySelector("#fenInput"),
+  pgnTools: document.querySelector("#pgnTools"),
+  pgnInput: document.querySelector("#pgnInput"),
   loadFenBtn: document.querySelector("#loadFenBtn"),
+  loadPgnBtn: document.querySelector("#loadPgnBtn"),
+  currentFenInput: document.querySelector("#currentFenInput"),
   copyFenBtn: document.querySelector("#copyFenBtn"),
   evalFill: document.querySelector("#evalFill"),
   evalText: document.querySelector("#evalText"),
@@ -72,7 +80,8 @@ const state = {
   analysisToken: 0,
   analysisFen: "",
   analysisLines: new Map(),
-  analysisRedo: []
+  analysisTool: "free",
+  analysis: createAnalysisState()
 };
 
 const moveEngine = new StockfishClient();
@@ -125,7 +134,11 @@ function hydrateButtonIcons() {
     [els.gameForwardBtn, "Next", "chevronRight"],
     [els.gameUndoBtn, "Undo", "undo"],
     [els.quitBtn, "Quit", "quit"],
+    [els.freeAnalysisBtn, "Free", "analysis"],
+    [els.fenAnalysisBtn, "FEN", "copy"],
+    [els.pgnAnalysisBtn, "PGN", "upload"],
     [els.loadFenBtn, "Load", "upload"],
+    [els.loadPgnBtn, "Load", "upload"],
     [els.copyFenBtn, "Copy", "copy"]
   ].forEach(([button, label, iconName]) => setButtonContent(button, label, iconName));
 }
@@ -138,6 +151,81 @@ function orderedSquares() {
 
 function liveHistory() {
   return state.chess.history({ verbose: true });
+}
+
+function createAnalysisState(mode = "free", rootFen = DEFAULT_POSITION) {
+  const normalizedRoot = new Chess(rootFen).fen();
+  const { turn, fullmove } = fenMeta(normalizedRoot);
+  return {
+    mode,
+    rootFen: normalizedRoot,
+    baseTurn: turn,
+    baseFullmove: fullmove,
+    mainline: [],
+    mainlineIndex: 0,
+    branch: [],
+    branchIndex: 0,
+    branchStartIndex: null,
+    pgnHeaders: {}
+  };
+}
+
+function fenMeta(fen) {
+  const parts = fen.split(/\s+/);
+  return {
+    turn: parts[1] || "w",
+    fullmove: Number(parts[5] || 1)
+  };
+}
+
+function moveDescriptor(move) {
+  return {
+    from: move.from,
+    to: move.to,
+    promotion: move.promotion || undefined,
+    san: move.san
+  };
+}
+
+function sameMove(a, b) {
+  return Boolean(a && b && a.from === b.from && a.to === b.to && (a.promotion || "") === (b.promotion || ""));
+}
+
+function isPgnBranchActive() {
+  return state.analysis.mode === "pgn" && state.analysis.branchStartIndex !== null;
+}
+
+function rebuildAnalysisPosition() {
+  const analysis = state.analysis;
+  const nextChess = new Chess(analysis.rootFen);
+  const mainlineLimit = isPgnBranchActive() ? analysis.branchStartIndex : analysis.mainlineIndex;
+
+  for (const move of analysis.mainline.slice(0, mainlineLimit)) {
+    nextChess.move(move);
+  }
+  for (const move of analysis.branch.slice(0, analysis.branchIndex)) {
+    nextChess.move(move);
+  }
+
+  state.chess = nextChess;
+}
+
+function analysisCanGoBack() {
+  const analysis = state.analysis;
+  if (analysis.mode === "pgn") {
+    return analysis.branchIndex > 0 || analysis.mainlineIndex > 0;
+  }
+  return analysis.branchIndex > 0;
+}
+
+function analysisCanGoForward() {
+  const analysis = state.analysis;
+  if (analysis.mode === "pgn") {
+    return isPgnBranchActive()
+      ? analysis.branchIndex < analysis.branch.length
+      : analysis.mainlineIndex < analysis.mainline.length;
+  }
+  return analysis.branchIndex < analysis.branch.length;
 }
 
 function isAtLivePosition() {
@@ -226,7 +314,8 @@ function resetPosition() {
   state.analysisToken += 1;
   state.analysisFen = "";
   state.analysisLines = new Map();
-  state.analysisRedo = [];
+  state.analysisTool = "free";
+  state.analysis = createAnalysisState();
   resetEval();
 }
 
@@ -302,6 +391,35 @@ function renderSetupOptions() {
   });
   els.clockOption.hidden = isBot;
   setButtonContent(els.startGameBtn, isBot ? "Bot game" : "Friend game", "play");
+}
+
+function setAnalysisTool(tool) {
+  state.analysisTool = tool;
+  if (tool === "free") {
+    analysisEngine.stopAnalysis();
+    state.analysis = createAnalysisState();
+    state.chess = new Chess(state.analysis.rootFen);
+    clearSelection();
+    updateAll();
+    return;
+  }
+  renderAnalysisTools();
+  updateStatus();
+}
+
+function renderAnalysisTools() {
+  const buttons = {
+    free: els.freeAnalysisBtn,
+    fen: els.fenAnalysisBtn,
+    pgn: els.pgnAnalysisBtn
+  };
+  Object.entries(buttons).forEach(([tool, button]) => {
+    const active = state.analysisTool === tool;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  els.fenTools.hidden = state.analysisTool !== "fen";
+  els.pgnTools.hidden = state.analysisTool !== "pgn";
 }
 
 function jumpToBoard() {
@@ -418,6 +536,7 @@ function enterAnalysis() {
   showPanel("analysis");
   setGlobalActive("analysis");
   renderShellState();
+  renderAnalysisTools();
   updateAll();
 }
 
@@ -480,15 +599,16 @@ function maybeMove(move) {
 }
 
 function makeMove(move) {
+  if (state.screen === "analysis") {
+    return makeAnalysisMove(move);
+  }
+
   tickClock();
   if (state.timedOut) return null;
   const played = state.chess.move(move);
   if (!played) return null;
 
   state.historyCursor = liveHistory().length;
-  if (state.screen === "analysis") {
-    state.analysisRedo = [];
-  }
   clearSelection();
 
   if (state.screen === "game" && els.autoFlipToggle.checked) {
@@ -499,6 +619,46 @@ function makeMove(move) {
   updateAll();
   syncClockAfterPositionChange();
   maybeBotMove();
+  return played;
+}
+
+function makeAnalysisMove(move) {
+  analysisEngine.stopAnalysis();
+  const played = state.chess.move(move);
+  if (!played) return null;
+
+  const descriptor = moveDescriptor(played);
+  const analysis = state.analysis;
+
+  if (analysis.mode === "pgn") {
+    if (!isPgnBranchActive()) {
+      const nextMainline = analysis.mainline[analysis.mainlineIndex];
+      if (sameMove(descriptor, nextMainline)) {
+        analysis.mainlineIndex += 1;
+      } else {
+        analysis.branchStartIndex = analysis.mainlineIndex;
+        analysis.branch = [descriptor];
+        analysis.branchIndex = 1;
+      }
+    } else {
+      if (analysis.branchIndex < analysis.branch.length) {
+        analysis.branch = analysis.branch.slice(0, analysis.branchIndex);
+      }
+      analysis.branch.push(descriptor);
+      analysis.branchIndex = analysis.branch.length;
+    }
+  } else {
+    if (analysis.branchIndex < analysis.branch.length) {
+      analysis.branch = analysis.branch.slice(0, analysis.branchIndex);
+    }
+    analysis.branch.push(descriptor);
+    analysis.branchIndex = analysis.branch.length;
+  }
+
+  rebuildAnalysisPosition();
+  clearSelection();
+  playMoveSound(played);
+  updateAll();
   return played;
 }
 
@@ -550,6 +710,7 @@ function updateAll() {
   updateButtons();
   updateStatus();
   if (state.screen === "analysis") {
+    renderAnalysisTools();
     startAnalysis();
   }
 }
@@ -557,8 +718,8 @@ function updateAll() {
 function updateButtons() {
   const historyLength = liveHistory().length;
   const gameBrowsing = state.screen === "game";
-  const canGoBack = state.screen === "analysis" ? historyLength > 0 : gameBrowsing && state.historyCursor > 0;
-  const canGoForward = state.screen === "analysis" ? state.analysisRedo.length > 0 : gameBrowsing && state.historyCursor < historyLength;
+  const canGoBack = state.screen === "analysis" ? analysisCanGoBack() : gameBrowsing && state.historyCursor > 0;
+  const canGoForward = state.screen === "analysis" ? analysisCanGoForward() : gameBrowsing && state.historyCursor < historyLength;
 
   els.backBtn.disabled = !canGoBack || state.locked;
   els.forwardBtn.disabled = !canGoForward || state.locked;
@@ -570,7 +731,7 @@ function updateButtons() {
   els.gameUndoBtn.disabled = els.undoBtn.disabled;
 
   if (state.screen === "analysis") {
-    els.cursorLabel.textContent = state.analysisRedo.length ? `Redo ${state.analysisRedo.length}` : "Explore";
+    els.cursorLabel.textContent = analysisCursorText();
   } else if (state.screen === "game") {
     els.cursorLabel.textContent = state.historyCursor === historyLength
       ? `Move ${historyLength}`
@@ -579,6 +740,20 @@ function updateButtons() {
     els.cursorLabel.textContent = "Start";
   }
   els.gameCursorLabel.textContent = els.cursorLabel.textContent;
+}
+
+function analysisCursorText() {
+  const analysis = state.analysis;
+  if (analysis.mode === "pgn") {
+    if (isPgnBranchActive()) {
+      return `Branch ${analysis.branchIndex}`;
+    }
+    return `PGN ${analysis.mainlineIndex} / ${analysis.mainline.length}`;
+  }
+  const label = analysis.mode === "fen" ? "FEN" : "Free";
+  return analysis.branchIndex === analysis.branch.length
+    ? `${label} ${analysis.branchIndex}`
+    : `${label} ${analysis.branchIndex} / ${analysis.branch.length}`;
 }
 
 function updateStatus() {
@@ -611,7 +786,7 @@ function updateStatus() {
   } else if (state.chess.isCheck()) {
     setStatus(`${turn} to move`, `${turn} is in check.`, "Check");
   } else if (state.screen === "analysis") {
-    setStatus(`${turn} to move`, "", "Analysis");
+    setAnalysisStatus(turn);
   } else if (state.gameType === "bot" && state.chess.turn() !== state.humanSide) {
     setStatus("Thinking", "Stockfish is choosing a move.", "Engine active");
   } else {
@@ -625,7 +800,42 @@ function setStatus(title, detail, pill) {
   els.statusPill.textContent = pill;
 }
 
+function setAnalysisStatus(turn) {
+  const analysis = state.analysis;
+  if (analysisToolNeedsInput()) {
+    const detail = state.analysisTool === "fen"
+      ? "Paste a FEN to make it the root of this analysis board."
+      : "Paste a PGN to review its mainline and explore temporary branches.";
+    setStatus(`${turn} to move`, detail, state.analysisTool.toUpperCase());
+    return;
+  }
+
+  if (analysis.mode === "pgn") {
+    const detail = isPgnBranchActive()
+      ? "Exploring a temporary branch. Back to the trunk discards it."
+      : "Use arrows to review the uploaded game. Play a different move to branch.";
+    setStatus(`${turn} to move`, detail, "PGN");
+    return;
+  }
+
+  if (analysis.mode === "fen") {
+    setStatus(`${turn} to move`, "Analyzing from the loaded position root.", "FEN");
+    return;
+  }
+
+  setStatus(`${turn} to move`, "Free analysis from the starting position.", "Free");
+}
+
+function analysisToolNeedsInput() {
+  return state.screen === "analysis" && state.analysisTool !== "free" && state.analysis.mode !== state.analysisTool;
+}
+
 function renderMoves() {
+  if (state.screen === "analysis") {
+    renderAnalysisMoves();
+    return;
+  }
+
   const history = liveHistory();
   els.moveList.replaceChildren(...history.map((move, index) => {
     const li = document.createElement("li");
@@ -636,6 +846,62 @@ function renderMoves() {
     return li;
   }));
   els.moveList.scrollTop = els.moveList.scrollHeight;
+}
+
+function renderAnalysisMoves() {
+  const analysis = state.analysis;
+  const items = [];
+
+  if (analysis.mode === "pgn") {
+    analysis.mainline.forEach((move, index) => {
+      const li = createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove);
+      if (!isPgnBranchActive() && index + 1 === analysis.mainlineIndex) li.classList.add("current");
+      if (index >= analysis.mainlineIndex && !isPgnBranchActive()) li.classList.add("future-move");
+      items.push(li);
+    });
+
+    if (isPgnBranchActive()) {
+      const branchStart = document.createElement("li");
+      branchStart.className = "branch-label";
+      branchStart.textContent = `Branch from ${analysisPlyLabel(analysis.branchStartIndex)}`;
+      items.push(branchStart);
+      analysis.branch.forEach((move, index) => {
+        const li = createMoveListItem(move, analysis.branchStartIndex + index, analysis.baseTurn, analysis.baseFullmove);
+        li.classList.add("branch-move");
+        if (index + 1 === analysis.branchIndex) li.classList.add("current");
+        if (index >= analysis.branchIndex) li.classList.add("future-move");
+        items.push(li);
+      });
+    }
+  } else {
+    analysis.branch.forEach((move, index) => {
+      const li = createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove);
+      if (index + 1 === analysis.branchIndex) li.classList.add("current");
+      if (index >= analysis.branchIndex) li.classList.add("future-move");
+      items.push(li);
+    });
+  }
+
+  els.moveList.replaceChildren(...items);
+  els.moveList.scrollTop = els.moveList.scrollHeight;
+}
+
+function createMoveListItem(move, index, baseTurn, baseFullmove) {
+  const li = document.createElement("li");
+  li.value = baseFullmove + Math.floor(index / 2);
+  li.textContent = `${moveNumberLabel(index, baseTurn, baseFullmove)} ${move.san || move.to}`;
+  return li;
+}
+
+function moveNumberLabel(index, baseTurn, baseFullmove) {
+  const ply = (baseTurn === "b" ? 1 : 0) + index;
+  const fullmove = baseFullmove + Math.floor(ply / 2);
+  return ply % 2 === 0 ? `${fullmove}.` : `${fullmove}...`;
+}
+
+function analysisPlyLabel(index) {
+  if (index === 0) return "root";
+  return `PGN ${index}`;
 }
 
 function renderCaptures() {
@@ -651,7 +917,10 @@ function renderCaptures() {
 }
 
 function updateFen() {
-  els.fenInput.value = state.chess.fen();
+  els.currentFenInput.value = state.chess.fen();
+  if (state.screen === "analysis" && state.analysisTool === "fen" && document.activeElement !== els.fenInput && !els.fenInput.value.trim()) {
+    els.fenInput.value = state.chess.fen();
+  }
 }
 
 function flipBoard() {
@@ -683,13 +952,7 @@ function navigateBack() {
   if (state.locked) return;
 
   if (state.screen === "analysis") {
-    analysisEngine.stopAnalysis();
-    const undone = state.chess.undo();
-    if (undone) {
-      state.analysisRedo.unshift({ from: undone.from, to: undone.to, promotion: undone.promotion });
-    }
-    clearSelection();
-    updateAll();
+    navigateAnalysisBack();
     return;
   }
 
@@ -704,16 +967,7 @@ function navigateForward() {
   if (state.locked) return;
 
   if (state.screen === "analysis") {
-    const next = state.analysisRedo[0];
-    if (!next) return;
-    state.analysisRedo = state.analysisRedo.slice(1);
-    const played = state.chess.move(next);
-    if (played) {
-      state.historyCursor = liveHistory().length;
-      playMoveSound(played);
-      clearSelection();
-      updateAll();
-    }
+    navigateAnalysisForward();
     return;
   }
 
@@ -725,19 +979,100 @@ function navigateForward() {
   syncClockAfterPositionChange();
 }
 
+function navigateAnalysisBack() {
+  if (!analysisCanGoBack()) return;
+  analysisEngine.stopAnalysis();
+  const analysis = state.analysis;
+
+  if (analysis.mode === "pgn") {
+    if (analysis.branchIndex > 0) {
+      analysis.branchIndex -= 1;
+      if (analysis.branchIndex === 0) {
+        analysis.branch = [];
+        analysis.branchStartIndex = null;
+      }
+    } else {
+      analysis.mainlineIndex -= 1;
+    }
+  } else {
+    analysis.branchIndex -= 1;
+  }
+
+  rebuildAnalysisPosition();
+  clearSelection();
+  updateAll();
+}
+
+function navigateAnalysisForward() {
+  if (!analysisCanGoForward()) return;
+  analysisEngine.stopAnalysis();
+  const analysis = state.analysis;
+  let played = null;
+
+  if (analysis.mode === "pgn") {
+    if (isPgnBranchActive()) {
+      const next = analysis.branch[analysis.branchIndex];
+      analysis.branchIndex += 1;
+      played = next;
+    } else {
+      const next = analysis.mainline[analysis.mainlineIndex];
+      analysis.mainlineIndex += 1;
+      played = next;
+    }
+  } else {
+    const next = analysis.branch[analysis.branchIndex];
+    analysis.branchIndex += 1;
+    played = next;
+  }
+
+  rebuildAnalysisPosition();
+  if (played) playMoveSound(played);
+  clearSelection();
+  updateAll();
+}
+
 function loadFen() {
   if (state.screen !== "analysis") return;
   const fen = els.fenInput.value.trim();
   try {
     analysisEngine.stopAnalysis();
-    state.chess.load(fen);
-    state.selected = null;
-    state.legalMoves = [];
-    state.analysisRedo = [];
-    state.historyCursor = liveHistory().length;
+    state.analysis = createAnalysisState("fen", fen);
+    state.analysisTool = "fen";
+    state.chess = new Chess(state.analysis.rootFen);
+    clearSelection();
     updateAll();
+    setStatus("FEN loaded", "This position is now the root of analysis.", "FEN");
   } catch {
     setStatus("FEN not loaded", "That FEN is not valid.", "Check input");
+  }
+}
+
+function loadPgn() {
+  if (state.screen !== "analysis") return;
+  const pgn = els.pgnInput.value.trim();
+  if (!pgn) {
+    setStatus("PGN not loaded", "Paste a PGN before loading.", "Check input");
+    return;
+  }
+
+  try {
+    analysisEngine.stopAnalysis();
+    const parsed = new Chess();
+    parsed.loadPgn(pgn, { strict: false });
+    const history = parsed.history({ verbose: true });
+    const headers = typeof parsed.getHeaders === "function" ? parsed.getHeaders() : parsed.header();
+    const rootFen = history[0]?.before || headers.FEN || DEFAULT_POSITION;
+    const analysis = createAnalysisState("pgn", rootFen);
+    analysis.mainline = history.map(moveDescriptor);
+    analysis.pgnHeaders = headers;
+    state.analysis = analysis;
+    state.analysisTool = "pgn";
+    rebuildAnalysisPosition();
+    clearSelection();
+    updateAll();
+    setStatus("PGN loaded", `${history.length} moves ready for review.`, "PGN");
+  } catch {
+    setStatus("PGN not loaded", "That PGN could not be parsed.", "Check input");
   }
 }
 
@@ -981,6 +1316,9 @@ els.globalPlayBtn.addEventListener("click", () => {
 window.addEventListener("pointerdown", unlockMoveAudio, { once: true, passive: true });
 window.addEventListener("touchstart", unlockMoveAudio, { once: true, passive: true });
 els.globalAnalysisBtn.addEventListener("click", enterAnalysis);
+els.freeAnalysisBtn.addEventListener("click", () => setAnalysisTool("free"));
+els.fenAnalysisBtn.addEventListener("click", () => setAnalysisTool("fen"));
+els.pgnAnalysisBtn.addEventListener("click", () => setAnalysisTool("pgn"));
 els.playBotModeBtn.addEventListener("click", () => setSetupGameType("bot"));
 els.playFriendModeBtn.addEventListener("click", () => setSetupGameType("friend"));
 els.startGameBtn.addEventListener("click", () => startGame(state.setupGameType));
@@ -1003,6 +1341,7 @@ els.forwardBtn.addEventListener("click", navigateForward);
 els.gameBackBtn.addEventListener("click", navigateBack);
 els.gameForwardBtn.addEventListener("click", navigateForward);
 els.loadFenBtn.addEventListener("click", loadFen);
+els.loadPgnBtn.addEventListener("click", loadPgn);
 els.copyFenBtn.addEventListener("click", copyFen);
 els.promotionDialog.addEventListener("close", () => {
   if (!state.pendingPromotion || !els.promotionDialog.returnValue) {
