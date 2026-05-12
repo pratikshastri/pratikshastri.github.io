@@ -303,6 +303,7 @@ textarea:focus-visible {
   border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 22px 48px rgba(23, 25, 24, 0.14);
+  touch-action: manipulation;
 }
 
 .rank-coords {
@@ -342,6 +343,7 @@ textarea:focus-visible {
   border-radius: 0;
   color: var(--ink);
   cursor: pointer;
+  touch-action: manipulation;
   user-select: none;
 }
 

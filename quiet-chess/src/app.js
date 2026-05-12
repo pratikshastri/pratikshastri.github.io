@@ -77,6 +77,7 @@ const state = {
   clockTimer: null,
   pendingPromotion: null,
   historyCursor: 0,
+  historyLength: 0,
   analysisToken: 0,
   analysisFen: "",
   analysisActiveFen: "",
@@ -90,6 +91,27 @@ let analysisEngine = null;
 let boardOrderKey = "";
 let moveListRenderKey = "";
 const squareEls = new Map();
+const boardPieceKeysBySquare = new Map();
+let lastMoveSquares = new Set();
+let legalTargetSquares = new Set();
+let selectedSquare = null;
+let readonlyBoard = false;
+let boardInputHandledAt = 0;
+let deferredUiScheduled = false;
+const pendingUi = {
+  moves: false,
+  captures: false,
+  clocks: false,
+  fen: false,
+  buttons: false,
+  status: false,
+  analysis: false
+};
+const perfEnabled = new URLSearchParams(window.location.search).has("perf");
+
+if (perfEnabled) {
+  window.__quietChessPerf = { lastMove: null };
+}
 
 function getMoveEngine() {
   moveEngine ||= new StockfishClient();
@@ -183,10 +205,23 @@ function initBoard() {
     });
   });
 
-  els.board.addEventListener("click", (event) => {
+  els.board.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
     if (!(event.target instanceof Element)) return;
     const square = event.target.closest(".square")?.dataset.square;
-    if (square) onSquare(square);
+    if (square && onSquare(square)) {
+      boardInputHandledAt = performance.now();
+      event.preventDefault();
+    }
+  });
+
+  els.board.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    if (event.detail !== 0 && performance.now() - boardInputHandledAt < 350) return;
+    const square = event.target.closest(".square")?.dataset.square;
+    if (square && onSquare(square)) {
+      event.preventDefault();
+    }
   });
 }
 
@@ -235,6 +270,94 @@ function sameMove(a, b) {
   return Boolean(a && b && a.from === b.from && a.to === b.to && (a.promotion || "") === (b.promotion || ""));
 }
 
+function afterNextPaint(callback) {
+  requestAnimationFrame(() => {
+    window.setTimeout(callback, 0);
+  });
+}
+
+function queueDeferredUi(flags = {}) {
+  Object.keys(pendingUi).forEach((key) => {
+    pendingUi[key] = Boolean(pendingUi[key] || flags[key]);
+  });
+
+  if (deferredUiScheduled) return;
+  deferredUiScheduled = true;
+  afterNextPaint(flushDeferredUi);
+}
+
+function flushDeferredUi() {
+  deferredUiScheduled = false;
+  const perf = currentMovePerf();
+  if (perf && perf.deferredUiStarted === null) {
+    perf.deferredUiStarted = performance.now();
+  }
+
+  const tasks = { ...pendingUi };
+  Object.keys(pendingUi).forEach((key) => {
+    pendingUi[key] = false;
+  });
+
+  if (tasks.moves) renderMoves();
+  if (tasks.captures) renderCaptures();
+  if (tasks.clocks) syncClockAfterPositionChange();
+  if (tasks.fen) updateFen();
+  if (tasks.buttons) updateButtons();
+  if (tasks.status) updateStatus();
+  if (tasks.analysis && state.screen === "analysis") {
+    renderAnalysisTools();
+    startAnalysis();
+  }
+
+  if (perf) {
+    perf.deferredUiFinished = performance.now();
+  }
+}
+
+function queuePostMoveUi(source) {
+  queueDeferredUi({
+    moves: true,
+    captures: true,
+    clocks: state.screen === "game",
+    fen: true,
+    buttons: true,
+    status: true,
+    analysis: source === "analysis"
+  });
+}
+
+function queuePostMoveWork(source) {
+  if (source === "player" && state.screen === "game" && state.gameType === "bot") {
+    afterNextPaint(() => {
+      const perf = currentMovePerf();
+      if (perf && perf.botSearchStarted === null) {
+        perf.botSearchStarted = performance.now();
+      }
+      maybeBotMove();
+    });
+  }
+}
+
+function beginMovePerf(source) {
+  if (!perfEnabled) return null;
+  const record = {
+    source,
+    start: performance.now(),
+    boardPatched: null,
+    deferredUiStarted: null,
+    deferredUiFinished: null,
+    botSearchStarted: null,
+    affectedSquares: 0,
+    usedFullBoardRender: false
+  };
+  window.__quietChessPerf.lastMove = record;
+  return record;
+}
+
+function currentMovePerf() {
+  return perfEnabled ? window.__quietChessPerf?.lastMove : null;
+}
+
 function isPgnBranchActive() {
   return state.analysis.mode === "pgn" && state.analysis.branchStartIndex !== null;
 }
@@ -268,7 +391,7 @@ function analysisCanGoForward() {
 }
 
 function isAtLivePosition() {
-  return state.screen !== "game" || state.historyCursor === liveHistory().length;
+  return state.screen !== "game" || state.historyCursor === state.historyLength;
 }
 
 function visibleChess() {
@@ -290,7 +413,10 @@ function visibleLastMove() {
 function renderBoard() {
   const boardChess = visibleChess();
   const lastMove = visibleLastMove();
-  const legalTargets = new Map(state.legalMoves.map((move) => [move.to, move]));
+  selectedSquare = state.selected;
+  legalTargetSquares = new Set(state.legalMoves.map((move) => move.to));
+  lastMoveSquares = new Set(lastMove ? [lastMove.from, lastMove.to] : []);
+  readonlyBoard = !isAtLivePosition();
   renderCoordinates();
 
   const squares = orderedSquares();
@@ -301,35 +427,109 @@ function renderBoard() {
   }
 
   squares.forEach((square) => {
-    const fileIndex = files.indexOf(square[0]);
-    const rankIndex = ranks.indexOf(square[1]);
-    const button = squareEls.get(square);
     const piece = boardChess.get(square);
-    const legal = legalTargets.get(square);
-    const pieceKey = piece ? `${piece.color}${piece.type}` : "";
-
-    button.className = [
-      "square",
-      (fileIndex + rankIndex) % 2 === 0 ? "light" : "dark",
-      state.selected === square ? "selected" : "",
-      lastMove && (lastMove.from === square || lastMove.to === square) ? "last" : "",
-      legal && piece ? "capture-target" : "",
-      legal && !piece ? "target" : "",
-      !isAtLivePosition() ? "readonly" : ""
-    ].filter(Boolean).join(" ");
-    button.setAttribute("aria-label", `${square}${piece ? " " + piece.color + piece.type : ""}`);
-
-    if (button.dataset.pieceKey !== pieceKey) {
-      button.replaceChildren();
-      button.dataset.pieceKey = pieceKey;
-    }
-
-    if (piece && !button.firstChild) {
-      const pieceEl = createPiece(piece);
-      pieceEl.setAttribute("class", "piece " + (piece.color === "w" ? "white" : "black"));
-      button.append(pieceEl);
-    }
+    setSquarePiece(square, piece);
+    setSquareClassState(square, piece);
   });
+}
+
+function setSquarePiece(square, piece) {
+  const button = squareEls.get(square);
+  if (!button) return;
+  const pieceKey = piece ? `${piece.color}${piece.type}` : "";
+
+  if (boardPieceKeysBySquare.get(square) === pieceKey) return;
+  button.replaceChildren();
+  boardPieceKeysBySquare.set(square, pieceKey);
+  button.dataset.pieceKey = pieceKey;
+
+  if (piece) {
+    const pieceEl = createPiece(piece);
+    pieceEl.setAttribute("class", "piece " + (piece.color === "w" ? "white" : "black"));
+    button.append(pieceEl);
+  }
+}
+
+function setSquareClassState(square, piece = state.chess.get(square)) {
+  const button = squareEls.get(square);
+  if (!button) return;
+  const fileIndex = files.indexOf(square[0]);
+  const rankIndex = ranks.indexOf(square[1]);
+  const legal = legalTargetSquares.has(square);
+
+  button.className = [
+    "square",
+    (fileIndex + rankIndex) % 2 === 0 ? "light" : "dark",
+    selectedSquare === square ? "selected" : "",
+    lastMoveSquares.has(square) ? "last" : "",
+    legal && piece ? "capture-target" : "",
+    legal && !piece ? "target" : "",
+    readonlyBoard ? "readonly" : ""
+  ].filter(Boolean).join(" ");
+  button.setAttribute("aria-label", `${square}${piece ? " " + piece.color + piece.type : ""}`);
+}
+
+function patchSquares(squares) {
+  squares.forEach((square) => {
+    const piece = state.chess.get(square);
+    setSquarePiece(square, piece);
+    setSquareClassState(square, piece);
+  });
+}
+
+function activeBoardUiSquares() {
+  return new Set([
+    ...lastMoveSquares,
+    ...legalTargetSquares,
+    ...(selectedSquare ? [selectedSquare] : [])
+  ]);
+}
+
+function affectedSquaresForMove(played) {
+  const affected = new Set([played.from, played.to]);
+  if (played.flags.includes("e")) {
+    affected.add(played.to[0] + played.from[1]);
+  }
+  if (played.flags.includes("k")) {
+    affected.add(played.color === "w" ? "h1" : "h8");
+    affected.add(played.color === "w" ? "f1" : "f8");
+  }
+  if (played.flags.includes("q")) {
+    affected.add(played.color === "w" ? "a1" : "a8");
+    affected.add(played.color === "w" ? "d1" : "d8");
+  }
+  return affected;
+}
+
+function patchBoardAfterMove(played, previousUiSquares, perf, useFullBoardRender = false) {
+  selectedSquare = null;
+  legalTargetSquares = new Set();
+  const previousLastMoveSquares = lastMoveSquares;
+  lastMoveSquares = new Set([played.from, played.to]);
+  readonlyBoard = !isAtLivePosition();
+
+  if (useFullBoardRender) {
+    renderBoard();
+    if (perf) {
+      perf.usedFullBoardRender = true;
+      perf.affectedSquares = 64;
+      perf.boardPatched = performance.now();
+    }
+    return;
+  }
+
+  const affected = new Set([
+    ...affectedSquaresForMove(played),
+    ...previousUiSquares,
+    ...previousLastMoveSquares,
+    ...lastMoveSquares
+  ]);
+  patchSquares(affected);
+
+  if (perf) {
+    perf.affectedSquares = affectedSquaresForMove(played).size;
+    perf.boardPatched = performance.now();
+  }
 }
 
 function renderCoordinates() {
@@ -358,12 +558,17 @@ function resetPosition() {
   state.clockLastTick = null;
   state.pendingPromotion = null;
   state.historyCursor = 0;
+  state.historyLength = 0;
   state.analysisToken += 1;
   state.analysisFen = "";
   state.analysisActiveFen = "";
   state.analysisLines = new Map();
   state.analysisTool = "free";
   state.analysis = createAnalysisState();
+  selectedSquare = null;
+  legalTargetSquares = new Set();
+  lastMoveSquares = new Set();
+  readonlyBoard = false;
   resetMoveListCache();
   resetEval();
 }
@@ -413,6 +618,7 @@ function startGame(type) {
   state.clocks = { w: state.clockInitial, b: state.clockInitial };
   state.orientation = type === "bot" && state.humanSide === "b" && !els.autoFlipToggle.checked ? "black" : "white";
   state.historyCursor = 0;
+  state.historyLength = 0;
   els.gameModeText.textContent = type === "bot" ? "Bot" : "Friend";
   els.gameDetailText.textContent = gameDetailText(type);
   showPanel("game");
@@ -421,6 +627,7 @@ function startGame(type) {
   updateAll();
   startClock();
   jumpToBoard();
+  if (type === "bot") getMoveEngine();
   maybeBotMove();
 }
 
@@ -520,10 +727,10 @@ function stopClock() {
   state.clockLastTick = null;
 }
 
-function tickClock() {
+function tickClock(render = true) {
   if (!hasActiveClock() || state.chess.isGameOver() || !isAtLivePosition()) {
     stopClock();
-    renderClocks();
+    if (render) renderClocks();
     return;
   }
 
@@ -538,10 +745,10 @@ function tickClock() {
     state.locked = true;
     clearSelection(false);
     stopClock();
-    updateAll();
+    if (render) updateAll();
     return;
   }
-  renderClocks();
+  if (render) renderClocks();
 }
 
 function syncClockAfterPositionChange() {
@@ -596,26 +803,27 @@ function enterAnalysis() {
 }
 
 function onSquare(square) {
-  if (!canEditBoard()) return;
+  if (!canEditBoard()) return false;
 
   const piece = state.chess.get(square);
   if (!state.selected) {
     selectSquare(square);
-    return;
+    return true;
   }
 
   const move = state.legalMoves.find((candidate) => candidate.to === square);
   if (move) {
     maybeMove(move);
-    return;
+    return true;
   }
 
   if (piece && piece.color === state.chess.turn()) {
     selectSquare(square);
-    return;
+    return true;
   }
 
   clearSelection();
+  return true;
 }
 
 function canEditBoard() {
@@ -633,15 +841,21 @@ function selectSquare(square) {
     return;
   }
 
+  const previousUiSquares = activeBoardUiSquares();
   state.selected = square;
   state.legalMoves = state.chess.moves({ square, verbose: true });
-  renderBoard();
+  selectedSquare = square;
+  legalTargetSquares = new Set(state.legalMoves.map((move) => move.to));
+  patchSquares(new Set([...previousUiSquares, ...activeBoardUiSquares()]));
 }
 
 function clearSelection(render = true) {
+  const previousUiSquares = activeBoardUiSquares();
   state.selected = null;
   state.legalMoves = [];
-  if (render) renderBoard();
+  selectedSquare = null;
+  legalTargetSquares = new Set();
+  if (render) patchSquares(previousUiSquares);
 }
 
 function maybeMove(move) {
@@ -658,27 +872,36 @@ function makeMove(move) {
     return makeAnalysisMove(move);
   }
 
-  tickClock();
-  if (state.timedOut) return null;
+  const perf = beginMovePerf("player");
+  const previousUiSquares = activeBoardUiSquares();
+  tickClock(false);
+  if (state.timedOut) {
+    updateAll();
+    return null;
+  }
   const played = state.chess.move(move);
   if (!played) return null;
 
-  state.historyCursor = liveHistory().length;
+  state.historyLength += 1;
+  state.historyCursor = state.historyLength;
   clearSelection(false);
 
+  let usedFullBoardRender = false;
   if (state.screen === "game" && els.autoFlipToggle.checked) {
-    flipBoard();
+    state.orientation = state.orientation === "white" ? "black" : "white";
+    usedFullBoardRender = true;
   }
 
-  playMoveSound(played);
-  updateAll();
-  syncClockAfterPositionChange();
-  maybeBotMove();
+  patchBoardAfterMove(played, previousUiSquares, perf, usedFullBoardRender);
+  queuePostMoveUi("player");
+  queuePostMoveWork("player");
   return played;
 }
 
 function makeAnalysisMove(move) {
   stopAnalysisEngine();
+  const perf = beginMovePerf("analysis");
+  const previousUiSquares = activeBoardUiSquares();
   const played = state.chess.move(move);
   if (!played) return null;
 
@@ -721,8 +944,8 @@ function makeAnalysisMove(move) {
   }
 
   clearSelection(false);
-  playMoveSound(played);
-  updateAll();
+  patchBoardAfterMove(played, previousUiSquares, perf);
+  queuePostMoveUi("analysis");
   return played;
 }
 
@@ -740,21 +963,30 @@ async function maybeBotMove() {
 
   state.locked = true;
   setStatus("Thinking", "Stockfish is choosing a move.", "Engine active");
+  updateButtons();
 
   const move = await getMoveEngine().bestMove(state.chess.fen(), state.difficulty);
   if (state.screen === "game" && state.gameType === "bot" && move && !state.chess.isGameOver()) {
+    const perf = beginMovePerf("bot");
+    const previousUiSquares = activeBoardUiSquares();
     const played = state.chess.move(parseUciMove(move));
     if (played) {
-      state.historyCursor = liveHistory().length;
+      state.historyLength += 1;
+      state.historyCursor = state.historyLength;
+      state.locked = false;
+      let usedFullBoardRender = false;
       if (els.autoFlipToggle.checked) {
-        flipBoard();
+        state.orientation = state.orientation === "white" ? "black" : "white";
+        usedFullBoardRender = true;
       }
-      playMoveSound(played);
+      patchBoardAfterMove(played, previousUiSquares, perf, usedFullBoardRender);
+      queuePostMoveUi("bot");
+      return;
     }
   }
 
   state.locked = false;
-  updateAll();
+  queueDeferredUi({ buttons: true, status: true, clocks: true });
 }
 
 function parseUciMove(uci) {
@@ -780,7 +1012,7 @@ function updateAll() {
 }
 
 function updateButtons() {
-  const historyLength = liveHistory().length;
+  const historyLength = state.screen === "game" ? state.historyLength : liveHistory().length;
   const gameBrowsing = state.screen === "game";
   const canGoBack = state.screen === "analysis" ? analysisCanGoBack() : gameBrowsing && state.historyCursor > 0;
   const canGoForward = state.screen === "analysis" ? analysisCanGoForward() : gameBrowsing && state.historyCursor < historyLength;
@@ -1035,7 +1267,8 @@ function undo() {
     state.chess.undo();
   }
 
-  state.historyCursor = liveHistory().length;
+  state.historyLength = liveHistory().length;
+  state.historyCursor = state.historyLength;
   clearSelection(false);
   updateAll();
   syncClockAfterPositionChange();
@@ -1064,7 +1297,7 @@ function navigateForward() {
     return;
   }
 
-  const historyLength = liveHistory().length;
+  const historyLength = state.historyLength;
   if (state.screen !== "game" || state.historyCursor >= historyLength) return;
   state.historyCursor += 1;
   clearSelection(false);
@@ -1121,7 +1354,6 @@ function navigateAnalysisForward() {
   }
 
   rebuildAnalysisPosition();
-  if (played) playMoveSound(played);
   clearSelection(false);
   updateAll();
 }
@@ -1314,76 +1546,6 @@ function createPiece(piece) {
   return image;
 }
 
-const soundFiles = {
-  move: "./assets/sounds/move-thud.wav",
-  capture: "./assets/sounds/capture-thud.wav",
-  checkmate: "./assets/sounds/checkmate-thud.wav"
-};
-const soundVolumes = {
-  move: 0.92,
-  capture: 0.92,
-  checkmate: 0.94
-};
-const soundPools = new Map();
-let audioPrimed = false;
-let lastSoundAt = 0;
-
-function initSoundPools() {
-  if (soundPools.size) return;
-  Object.entries(soundFiles).forEach(([name, src]) => {
-    const pool = Array.from({ length: 4 }, () => {
-      const audio = new Audio(src);
-      audio.preload = "auto";
-      audio.volume = soundVolumes[name] ?? 0.9;
-      audio.load();
-      return audio;
-    });
-    soundPools.set(name, pool);
-  });
-}
-
-function playMoveSound(move) {
-  if (state.chess.isCheckmate()) {
-    playSound("checkmate");
-  } else if (move.captured) {
-    playSound("capture");
-  } else {
-    playSound("move");
-  }
-}
-
-function unlockMoveAudio() {
-  if (audioPrimed) return;
-  audioPrimed = true;
-  initSoundPools();
-  const firstMoveSound = soundPools.get("move")?.[0];
-  if (!firstMoveSound) return;
-  firstMoveSound.volume = 0;
-  firstMoveSound.play()
-    .then(() => {
-      firstMoveSound.pause();
-      firstMoveSound.currentTime = 0;
-      firstMoveSound.volume = soundVolumes.move;
-    })
-    .catch(() => {
-      firstMoveSound.volume = soundVolumes.move;
-    });
-}
-
-function playSound(name) {
-  initSoundPools();
-  const now = performance.now();
-  if (now - lastSoundAt < 45) return;
-  const pool = soundPools.get(name);
-  if (!pool) return;
-  const audio = pool.find((candidate) => candidate.paused || candidate.ended) || pool[0];
-  audio.pause();
-  audio.currentTime = 0;
-  audio.volume = soundVolumes[name] ?? 0.9;
-  audio.play().catch(() => {});
-  lastSoundAt = now;
-}
-
 function createCapturedPiece(color, type) {
   const span = document.createElement("span");
   span.className = "captured-piece";
@@ -1396,8 +1558,6 @@ function createCapturedPiece(color, type) {
 els.globalPlayBtn.addEventListener("click", () => {
   if (state.screen === "analysis") enterSetup();
 });
-window.addEventListener("pointerdown", unlockMoveAudio, { once: true, passive: true });
-window.addEventListener("touchstart", unlockMoveAudio, { once: true, passive: true });
 els.globalAnalysisBtn.addEventListener("click", enterAnalysis);
 els.freeAnalysisBtn.addEventListener("click", () => setAnalysisTool("free"));
 els.fenAnalysisBtn.addEventListener("click", () => setAnalysisTool("fen"));
