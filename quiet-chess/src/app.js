@@ -79,13 +79,36 @@ const state = {
   historyCursor: 0,
   analysisToken: 0,
   analysisFen: "",
+  analysisActiveFen: "",
   analysisLines: new Map(),
   analysisTool: "free",
   analysis: createAnalysisState()
 };
 
-const moveEngine = new StockfishClient();
-const analysisEngine = new StockfishClient();
+let moveEngine = null;
+let analysisEngine = null;
+let boardOrderKey = "";
+let moveListRenderKey = "";
+const squareEls = new Map();
+
+function getMoveEngine() {
+  moveEngine ||= new StockfishClient();
+  return moveEngine;
+}
+
+function getAnalysisEngine() {
+  analysisEngine ||= new StockfishClient();
+  return analysisEngine;
+}
+
+function stopAnalysisEngine() {
+  state.analysisActiveFen = "";
+  analysisEngine?.stopAnalysis();
+}
+
+function resetMoveListCache() {
+  moveListRenderKey = "";
+}
 
 const icons = {
   analysis: '<path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 14 4-4 3 3 5-7"/>',
@@ -149,6 +172,24 @@ function orderedSquares() {
   return rankOrder.flatMap((rank) => fileOrder.map((file) => file + rank));
 }
 
+function initBoard() {
+  ranks.forEach((rank) => {
+    files.forEach((file) => {
+      const square = file + rank;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.square = square;
+      squareEls.set(square, button);
+    });
+  });
+
+  els.board.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const square = event.target.closest(".square")?.dataset.square;
+    if (square) onSquare(square);
+  });
+}
+
 function liveHistory() {
   return state.chess.history({ verbose: true });
 }
@@ -162,10 +203,13 @@ function createAnalysisState(mode = "free", rootFen = DEFAULT_POSITION) {
     baseTurn: turn,
     baseFullmove: fullmove,
     mainline: [],
+    mainlinePositions: [normalizedRoot],
     mainlineIndex: 0,
     branch: [],
+    branchPositions: [normalizedRoot],
     branchIndex: 0,
     branchStartIndex: null,
+    structureVersion: 0,
     pgnHeaders: {}
   };
 }
@@ -197,17 +241,12 @@ function isPgnBranchActive() {
 
 function rebuildAnalysisPosition() {
   const analysis = state.analysis;
-  const nextChess = new Chess(analysis.rootFen);
-  const mainlineLimit = isPgnBranchActive() ? analysis.branchStartIndex : analysis.mainlineIndex;
-
-  for (const move of analysis.mainline.slice(0, mainlineLimit)) {
-    nextChess.move(move);
-  }
-  for (const move of analysis.branch.slice(0, analysis.branchIndex)) {
-    nextChess.move(move);
-  }
-
-  state.chess = nextChess;
+  const fen = analysis.mode === "pgn"
+    ? (isPgnBranchActive()
+      ? analysis.branchPositions[analysis.branchIndex] || analysis.mainlinePositions[analysis.branchStartIndex] || analysis.rootFen
+      : analysis.mainlinePositions[analysis.mainlineIndex] || analysis.rootFen)
+    : analysis.branchPositions[analysis.branchIndex] || analysis.rootFen;
+  state.chess = new Chess(fen);
 }
 
 function analysisCanGoBack() {
@@ -254,14 +293,21 @@ function renderBoard() {
   const legalTargets = new Map(state.legalMoves.map((move) => [move.to, move]));
   renderCoordinates();
 
-  els.board.replaceChildren(...orderedSquares().map((square) => {
+  const squares = orderedSquares();
+  const nextOrderKey = `${state.orientation}:${squares.join("")}`;
+  if (nextOrderKey !== boardOrderKey) {
+    els.board.replaceChildren(...squares.map((square) => squareEls.get(square)));
+    boardOrderKey = nextOrderKey;
+  }
+
+  squares.forEach((square) => {
     const fileIndex = files.indexOf(square[0]);
     const rankIndex = ranks.indexOf(square[1]);
-    const button = document.createElement("button");
+    const button = squareEls.get(square);
     const piece = boardChess.get(square);
     const legal = legalTargets.get(square);
+    const pieceKey = piece ? `${piece.color}${piece.type}` : "";
 
-    button.type = "button";
     button.className = [
       "square",
       (fileIndex + rankIndex) % 2 === 0 ? "light" : "dark",
@@ -271,18 +317,19 @@ function renderBoard() {
       legal && !piece ? "target" : "",
       !isAtLivePosition() ? "readonly" : ""
     ].filter(Boolean).join(" ");
-    button.dataset.square = square;
     button.setAttribute("aria-label", `${square}${piece ? " " + piece.color + piece.type : ""}`);
 
-    if (piece) {
+    if (button.dataset.pieceKey !== pieceKey) {
+      button.replaceChildren();
+      button.dataset.pieceKey = pieceKey;
+    }
+
+    if (piece && !button.firstChild) {
       const pieceEl = createPiece(piece);
       pieceEl.setAttribute("class", "piece " + (piece.color === "w" ? "white" : "black"));
       button.append(pieceEl);
     }
-
-    button.addEventListener("click", () => onSquare(square));
-    return button;
-  }));
+  });
 }
 
 function renderCoordinates() {
@@ -301,7 +348,7 @@ function renderCoordinates() {
 }
 
 function resetPosition() {
-  analysisEngine.stopAnalysis();
+  stopAnalysisEngine();
   stopClock();
   state.chess = new Chess();
   state.selected = null;
@@ -313,9 +360,11 @@ function resetPosition() {
   state.historyCursor = 0;
   state.analysisToken += 1;
   state.analysisFen = "";
+  state.analysisActiveFen = "";
   state.analysisLines = new Map();
   state.analysisTool = "free";
   state.analysis = createAnalysisState();
+  resetMoveListCache();
   resetEval();
 }
 
@@ -396,10 +445,11 @@ function renderSetupOptions() {
 function setAnalysisTool(tool) {
   state.analysisTool = tool;
   if (tool === "free") {
-    analysisEngine.stopAnalysis();
+    stopAnalysisEngine();
     state.analysis = createAnalysisState();
     state.chess = new Chess(state.analysis.rootFen);
-    clearSelection();
+    resetMoveListCache();
+    clearSelection(false);
     updateAll();
     return;
   }
@@ -486,7 +536,7 @@ function tickClock() {
   if (state.clocks[turn] <= 0) {
     state.timedOut = turn;
     state.locked = true;
-    clearSelection();
+    clearSelection(false);
     stopClock();
     updateAll();
     return;
@@ -588,10 +638,10 @@ function selectSquare(square) {
   renderBoard();
 }
 
-function clearSelection() {
+function clearSelection(render = true) {
   state.selected = null;
   state.legalMoves = [];
-  renderBoard();
+  if (render) renderBoard();
 }
 
 function maybeMove(move) {
@@ -614,7 +664,7 @@ function makeMove(move) {
   if (!played) return null;
 
   state.historyCursor = liveHistory().length;
-  clearSelection();
+  clearSelection(false);
 
   if (state.screen === "game" && els.autoFlipToggle.checked) {
     flipBoard();
@@ -628,7 +678,7 @@ function makeMove(move) {
 }
 
 function makeAnalysisMove(move) {
-  analysisEngine.stopAnalysis();
+  stopAnalysisEngine();
   const played = state.chess.move(move);
   if (!played) return null;
 
@@ -643,25 +693,34 @@ function makeAnalysisMove(move) {
       } else {
         analysis.branchStartIndex = analysis.mainlineIndex;
         analysis.branch = [descriptor];
+        analysis.branchPositions = [analysis.mainlinePositions[analysis.branchStartIndex] || analysis.rootFen, state.chess.fen()];
         analysis.branchIndex = 1;
+        analysis.structureVersion += 1;
       }
     } else {
       if (analysis.branchIndex < analysis.branch.length) {
         analysis.branch = analysis.branch.slice(0, analysis.branchIndex);
+        analysis.branchPositions = analysis.branchPositions.slice(0, analysis.branchIndex + 1);
+        analysis.structureVersion += 1;
       }
       analysis.branch.push(descriptor);
+      analysis.branchPositions.push(state.chess.fen());
       analysis.branchIndex = analysis.branch.length;
+      analysis.structureVersion += 1;
     }
   } else {
     if (analysis.branchIndex < analysis.branch.length) {
       analysis.branch = analysis.branch.slice(0, analysis.branchIndex);
+      analysis.branchPositions = analysis.branchPositions.slice(0, analysis.branchIndex + 1);
+      analysis.structureVersion += 1;
     }
     analysis.branch.push(descriptor);
+    analysis.branchPositions.push(state.chess.fen());
     analysis.branchIndex = analysis.branch.length;
+    analysis.structureVersion += 1;
   }
 
-  rebuildAnalysisPosition();
-  clearSelection();
+  clearSelection(false);
   playMoveSound(played);
   updateAll();
   return played;
@@ -682,7 +741,7 @@ async function maybeBotMove() {
   state.locked = true;
   setStatus("Thinking", "Stockfish is choosing a move.", "Engine active");
 
-  const move = await moveEngine.bestMove(state.chess.fen(), state.difficulty);
+  const move = await getMoveEngine().bestMove(state.chess.fen(), state.difficulty);
   if (state.screen === "game" && state.gameType === "bot" && move && !state.chess.isGameOver()) {
     const played = state.chess.move(parseUciMove(move));
     if (played) {
@@ -855,46 +914,74 @@ function renderMoves() {
 
 function renderAnalysisMoves() {
   const analysis = state.analysis;
-  const items = [];
+  const key = analysisMoveStructureKey();
 
-  if (analysis.mode === "pgn") {
-    analysis.mainline.forEach((move, index) => {
-      const li = createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove);
-      if (!isPgnBranchActive() && index + 1 === analysis.mainlineIndex) li.classList.add("current");
-      if (index >= analysis.mainlineIndex && !isPgnBranchActive()) li.classList.add("future-move");
-      items.push(li);
-    });
+  if (key !== moveListRenderKey) {
+    const items = [];
 
-    if (isPgnBranchActive()) {
-      const branchStart = document.createElement("li");
-      branchStart.className = "branch-label";
-      branchStart.textContent = `Branch from ${analysisPlyLabel(analysis.branchStartIndex)}`;
-      items.push(branchStart);
+    if (analysis.mode === "pgn") {
+      analysis.mainline.forEach((move, index) => {
+        items.push(createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove, "mainline", index));
+      });
+
+      if (isPgnBranchActive()) {
+        const branchStart = document.createElement("li");
+        branchStart.className = "branch-label";
+        branchStart.textContent = `Branch from ${analysisPlyLabel(analysis.branchStartIndex)}`;
+        items.push(branchStart);
+        analysis.branch.forEach((move, index) => {
+          const li = createMoveListItem(move, analysis.branchStartIndex + index, analysis.baseTurn, analysis.baseFullmove, "branch", index);
+          li.classList.add("branch-move");
+          items.push(li);
+        });
+      }
+    } else {
       analysis.branch.forEach((move, index) => {
-        const li = createMoveListItem(move, analysis.branchStartIndex + index, analysis.baseTurn, analysis.baseFullmove);
-        li.classList.add("branch-move");
-        if (index + 1 === analysis.branchIndex) li.classList.add("current");
-        if (index >= analysis.branchIndex) li.classList.add("future-move");
-        items.push(li);
+        items.push(createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove, "branch", index));
       });
     }
-  } else {
-    analysis.branch.forEach((move, index) => {
-      const li = createMoveListItem(move, index, analysis.baseTurn, analysis.baseFullmove);
-      if (index + 1 === analysis.branchIndex) li.classList.add("current");
-      if (index >= analysis.branchIndex) li.classList.add("future-move");
-      items.push(li);
-    });
+
+    els.moveList.replaceChildren(...items);
+    moveListRenderKey = key;
   }
 
-  els.moveList.replaceChildren(...items);
-  els.moveList.scrollTop = els.moveList.scrollHeight;
+  updateAnalysisMoveClasses();
 }
 
-function createMoveListItem(move, index, baseTurn, baseFullmove) {
+function analysisMoveStructureKey() {
+  const analysis = state.analysis;
+  return [
+    "analysis",
+    analysis.mode,
+    analysis.structureVersion,
+    isPgnBranchActive() ? analysis.branchStartIndex : "trunk"
+  ].join(":");
+}
+
+function updateAnalysisMoveClasses() {
+  const analysis = state.analysis;
+  els.moveList.querySelectorAll("li[data-role]").forEach((li) => {
+    const index = Number(li.dataset.index);
+    const role = li.dataset.role;
+    const current = role === "mainline"
+      ? !isPgnBranchActive() && index + 1 === analysis.mainlineIndex
+      : index + 1 === analysis.branchIndex;
+    const future = role === "mainline"
+      ? !isPgnBranchActive() && index >= analysis.mainlineIndex
+      : index >= analysis.branchIndex;
+    li.classList.toggle("current", current);
+    li.classList.toggle("future-move", future);
+  });
+}
+
+function createMoveListItem(move, index, baseTurn, baseFullmove, role = "", roleIndex = index) {
   const li = document.createElement("li");
   li.value = baseFullmove + Math.floor(index / 2);
   li.textContent = `${moveNumberLabel(index, baseTurn, baseFullmove)} ${move.san || move.to}`;
+  if (role) {
+    li.dataset.role = role;
+    li.dataset.index = String(roleIndex);
+  }
   return li;
 }
 
@@ -936,7 +1023,7 @@ function flipBoard() {
 
 function undo() {
   if (state.screen !== "game" || state.locked || !isAtLivePosition()) return;
-  analysisEngine.stopAnalysis();
+  stopAnalysisEngine();
   stopClock();
 
   if (state.gameType === "bot") {
@@ -949,7 +1036,7 @@ function undo() {
   }
 
   state.historyCursor = liveHistory().length;
-  clearSelection();
+  clearSelection(false);
   updateAll();
   syncClockAfterPositionChange();
 }
@@ -965,7 +1052,7 @@ function navigateBack() {
   if (state.screen !== "game" || state.historyCursor <= 0) return;
   stopClock();
   state.historyCursor -= 1;
-  clearSelection();
+  clearSelection(false);
   updateAll();
 }
 
@@ -980,14 +1067,14 @@ function navigateForward() {
   const historyLength = liveHistory().length;
   if (state.screen !== "game" || state.historyCursor >= historyLength) return;
   state.historyCursor += 1;
-  clearSelection();
+  clearSelection(false);
   updateAll();
   syncClockAfterPositionChange();
 }
 
 function navigateAnalysisBack() {
   if (!analysisCanGoBack()) return;
-  analysisEngine.stopAnalysis();
+  stopAnalysisEngine();
   const analysis = state.analysis;
 
   if (analysis.mode === "pgn") {
@@ -995,7 +1082,9 @@ function navigateAnalysisBack() {
       analysis.branchIndex -= 1;
       if (analysis.branchIndex === 0) {
         analysis.branch = [];
+        analysis.branchPositions = [analysis.mainlinePositions[analysis.branchStartIndex] || analysis.rootFen];
         analysis.branchStartIndex = null;
+        analysis.structureVersion += 1;
       }
     } else {
       analysis.mainlineIndex -= 1;
@@ -1005,13 +1094,13 @@ function navigateAnalysisBack() {
   }
 
   rebuildAnalysisPosition();
-  clearSelection();
+  clearSelection(false);
   updateAll();
 }
 
 function navigateAnalysisForward() {
   if (!analysisCanGoForward()) return;
-  analysisEngine.stopAnalysis();
+  stopAnalysisEngine();
   const analysis = state.analysis;
   let played = null;
 
@@ -1033,7 +1122,7 @@ function navigateAnalysisForward() {
 
   rebuildAnalysisPosition();
   if (played) playMoveSound(played);
-  clearSelection();
+  clearSelection(false);
   updateAll();
 }
 
@@ -1041,11 +1130,12 @@ function loadFen() {
   if (state.screen !== "analysis") return;
   const fen = els.fenInput.value.trim();
   try {
-    analysisEngine.stopAnalysis();
+    stopAnalysisEngine();
     state.analysis = createAnalysisState("fen", fen);
     state.analysisTool = "fen";
     state.chess = new Chess(state.analysis.rootFen);
-    clearSelection();
+    resetMoveListCache();
+    clearSelection(false);
     updateAll();
     setStatus("FEN loaded", "This position is now the root of analysis.", "FEN");
   } catch {
@@ -1062,7 +1152,7 @@ function loadPgn() {
   }
 
   try {
-    analysisEngine.stopAnalysis();
+    stopAnalysisEngine();
     const parsed = new Chess();
     parsed.loadPgn(pgn, { strict: false });
     const history = parsed.history({ verbose: true });
@@ -1070,11 +1160,20 @@ function loadPgn() {
     const rootFen = history[0]?.before || headers.FEN || DEFAULT_POSITION;
     const analysis = createAnalysisState("pgn", rootFen);
     analysis.mainline = history.map(moveDescriptor);
+    analysis.mainlinePositions = [analysis.rootFen];
+    const replay = new Chess(analysis.rootFen);
+    for (const move of analysis.mainline) {
+      replay.move(move);
+      analysis.mainlinePositions.push(replay.fen());
+    }
+    analysis.branchPositions = [analysis.rootFen];
+    analysis.structureVersion += 1;
     analysis.pgnHeaders = headers;
     state.analysis = analysis;
     state.analysisTool = "pgn";
+    resetMoveListCache();
     rebuildAnalysisPosition();
-    clearSelection();
+    clearSelection(false);
     updateAll();
     setStatus("PGN loaded", `${history.length} moves ready for review.`, "PGN");
   } catch {
@@ -1088,16 +1187,19 @@ async function copyFen() {
 }
 
 function startAnalysis() {
+  const fen = state.chess.fen();
+  if (state.analysisActiveFen === fen) return;
+
   const token = ++state.analysisToken;
   const sideToMove = state.chess.turn();
-  const fen = state.chess.fen();
+  state.analysisActiveFen = fen;
   state.analysisFen = fen;
   state.analysisLines = new Map();
   els.evalText.textContent = "Analyzing";
   els.evalFill.style.height = "50%";
   renderEngineLines();
 
-  analysisEngine.startAnalysis(fen, (line) => {
+  getAnalysisEngine().startAnalysis(fen, (line) => {
     if (token !== state.analysisToken) return;
     const parsed = parseInfo(line, sideToMove, fen);
     if (!parsed) return;
@@ -1335,7 +1437,11 @@ els.promotionDialog.addEventListener("close", () => {
   els.promotionDialog.returnValue = "";
 });
 window.addEventListener("keydown", (event) => {
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+  if (
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLSelectElement ||
+    event.target instanceof HTMLTextAreaElement
+  ) return;
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     navigateBack();
@@ -1345,5 +1451,6 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
+initBoard();
 hydrateButtonIcons();
 enterSetup();

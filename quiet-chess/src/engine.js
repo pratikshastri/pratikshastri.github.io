@@ -2,8 +2,13 @@ export class StockfishClient {
   constructor() {
     this.worker = null;
     this.ready = false;
+    this.resolveReady = null;
+    this.readyPromise = new Promise((resolve) => {
+      this.resolveReady = resolve;
+    });
     this.pendingBestMove = null;
     this.analysisHandler = null;
+    this.analysisRunId = 0;
     this.boot();
   }
 
@@ -15,8 +20,9 @@ export class StockfishClient {
   }
 
   handleLine(line) {
-    if (line === "uciok" || line === "readyok") {
+    if (line === "readyok") {
       this.ready = true;
+      this.resolveReady?.();
     }
 
     if (this.analysisHandler && line.startsWith("info ")) {
@@ -33,6 +39,12 @@ export class StockfishClient {
 
   send(command) {
     this.worker?.postMessage(command);
+  }
+
+  async ensureReady() {
+    if (!this.ready) {
+      await this.readyPromise;
+    }
   }
 
   configure(level) {
@@ -52,7 +64,8 @@ export class StockfishClient {
     this.send("setoption name MultiPV value 3");
   }
 
-  bestMove(fen, level) {
+  async bestMove(fen, level) {
+    await this.ensureReady();
     this.configure(level);
     this.send("stop");
     this.send("position fen " + fen);
@@ -70,15 +83,20 @@ export class StockfishClient {
   }
 
   startAnalysis(fen, onInfo) {
-    this.send("stop");
+    const runId = ++this.analysisRunId;
     this.pendingBestMove = null;
     this.analysisHandler = onInfo;
-    this.configureAnalysis();
-    this.send("position fen " + fen);
-    this.send("go depth 20");
+    this.send("stop");
+    this.ensureReady().then(() => {
+      if (runId !== this.analysisRunId || this.analysisHandler !== onInfo) return;
+      this.configureAnalysis();
+      this.send("position fen " + fen);
+      this.send("go depth 20");
+    });
   }
 
   stopAnalysis() {
+    this.analysisRunId += 1;
     this.analysisHandler = null;
     this.send("stop");
   }
