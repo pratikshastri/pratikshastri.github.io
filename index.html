@@ -8,273 +8,430 @@
 <title>Pratik Shastri | Theoretical Computer Science</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400..700&amp;display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js"></script>
 <style>
     :root {
-      /* Light Mode Palette */
-      --bg: #EEFDFF;
-      --text: #111111;
-      --accent: #0077FF;
-      --border: #DDDDDD;
-
-      /* Dark Mode Palette */
-      --bg-dark: #00001A;
-      --text-dark: #FAFAFA;
-      --border-dark: #333333;
+      --bg: #f4f7f4;
+      --text: #191b18;
+      --muted: #687069;
+      --accent: #517783;
+      --rule: #d7ded8;
+      --bg-dark: #101411;
+      --text-dark: #ecefe8;
+      --muted-dark: #a7ada4;
+      --accent-dark: #98b8c2;
+      --rule-dark: #2c352f;
     }
 
-    /* GENERAL STYLES */
     *, *::before, *::after {
-        box-sizing: border-box;
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light;
     }
 
     body {
       margin: 0;
-      background-color: var(--bg);
+      min-height: 100vh;
+      background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+      font-size: 18px;
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
-      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-      min-height: 100vh;
+      text-rendering: optimizeLegibility;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
 
     body.dark {
+      color-scheme: dark;
       --bg: var(--bg-dark);
       --text: var(--text-dark);
-      --border: var(--border-dark);
+      --muted: var(--muted-dark);
+      --accent: var(--accent-dark);
+      --rule: var(--rule-dark);
     }
 
-    main {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 4rem 1.5rem;
+    ::selection {
+      background: rgba(81, 119, 131, 0.2);
     }
 
-    h1, h2, h3 {
-      font-family: 'IBM Plex Mono', monospace;
-      font-weight: 500;
-      color: var(--text);
-      margin: 2.5rem 0 1rem;
+    p {
+      margin: 0 0 1rem;
     }
-
-    h1 { font-size: 2.5rem; }
-    h2 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-    h3 { font-size: 1.25rem; }
-
-    p { margin: 0 0 1rem 0; }
 
     a {
-      color: var(--text);
+      color: inherit;
       text-decoration: underline;
-      text-decoration-thickness: 1.5px;
-      transition: color 0.2s ease;
+      text-decoration-color: var(--accent);
+      text-decoration-thickness: 0.06em;
+      text-underline-offset: 0.18em;
+      transition: color 0.2s ease, text-decoration-color 0.2s ease;
     }
+
     a:hover {
       color: var(--accent);
     }
 
-    /* HEADER */
+    a:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 4px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      color: var(--text);
+      font-family: inherit;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.2rem;
+      line-height: 1;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      color: var(--accent);
+      transform: rotate(12deg);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 0;
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
     header {
-      padding: 4rem 1.5rem;
-      max-width: 720px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 8rem;
+      gap: 2.5rem 4rem;
+      align-items: end;
+      max-width: 1040px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1.5rem;
-      border-bottom: 1px solid var(--border);
+      padding: 5.5rem 2rem 4.5rem;
     }
 
     .header-content {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        width: 100%;
+      display: contents;
     }
 
     .profile-pic {
-      width: 80px;
-      height: 80px;
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: start;
+      justify-self: end;
+      width: 8rem;
+      height: 8rem;
       border-radius: 50%;
       object-fit: cover;
-      flex-shrink: 0;
+      filter: grayscale(1) contrast(0.95);
+      opacity: 0.95;
+    }
+
+    .header-text {
+      grid-column: 1;
+      max-width: 760px;
     }
 
     .header-text h1 {
-        margin: 0;
-        line-height: 1.1;
+      font-size: 4.75rem;
+      line-height: 0.95;
     }
 
     .header-text p {
-        margin: 0.25rem 0 0 0;
-        font-size: 1.1rem;
-        color: var(--text);
-        opacity: 0.7;
+      max-width: 38rem;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 1.35rem;
+      line-height: 1.45;
     }
 
     .contact-info {
-        font-size: 0.9rem;
-        line-height: 1.6;
-        opacity: 0.8;
+      grid-column: 1;
+      max-width: 38rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    .contact-info p {
+      margin: 0;
     }
 
     .contact-info a {
-        color: var(--text);
-    }
-    .contact-info a:hover {
-        color: var(--accent);
-    }
-
-
-    /* DARK MODE TOGGLE */
-    .toggle-button {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: 1px solid var(--border);
       color: var(--text);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      z-index: 100;
-    }
-    .toggle-button:hover {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-      transform: rotate(15deg) scale(1.1);
     }
 
-    /* RESEARCH SECTION */
+    .site-links {
+      grid-column: 1;
+      display: flex;
+      gap: 1.25rem;
+      margin-top: -1.25rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .site-links a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .site-links a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+    }
+
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    section {
+      display: grid;
+      grid-template-columns: 11rem minmax(0, 1fr);
+      gap: 2rem 4rem;
+      padding: 3.75rem 0;
+      border-top: 1px solid var(--rule);
+    }
+
+    section > h2 {
+      grid-column: 1;
+      margin-top: 0.25rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.4;
+    }
+
+    section > :not(h2) {
+      grid-column: 2;
+    }
+
+    #about p {
+      max-width: 44rem;
+      font-size: 1.15rem;
+      line-height: 1.75;
+    }
+
+    h3 {
+      margin-bottom: 1.25rem;
+      font-size: 1.2rem;
+      font-style: italic;
+      line-height: 1.35;
+    }
+
+    #research h3:not(:first-of-type) {
+      margin-top: 3rem;
+    }
+
     #research ul {
       list-style: none;
-      padding-left: 0;
+      margin: 0;
+      padding: 0;
     }
-    #research ul li {
-      padding: 1.5rem 0;
-      border-bottom: 1px solid var(--border);
+
+    #research li {
+      padding: 1.35rem 0;
+      border-top: 1px solid var(--rule);
     }
-    #research ul li:last-child {
-        border-bottom: none;
+
+    #research li:first-child {
+      padding-top: 0;
+      border-top: 0;
     }
 
     details > summary {
+      position: relative;
+      padding-right: 6rem;
       cursor: pointer;
       list-style: none;
-      position: relative;
-      padding-right: 8rem;
     }
-    details > summary::-webkit-details-marker { display: none; }
+
+    details > summary::-webkit-details-marker {
+      display: none;
+    }
 
     details > summary::after {
-      content: 'View Abstract';
+      content: "Abstract";
       position: absolute;
-      top: 50%;
+      top: 0.15rem;
       right: 0;
-      transform: translateY(-50%);
-      color: var(--text);
-      font-size: 0.9rem;
-      font-family: 'IBM Plex Mono', monospace;
-      text-decoration: underline;
-      white-space: nowrap;
-      opacity: 0.7;
-      transition: opacity 0.2s ease;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.3;
+      transition: color 0.2s ease;
     }
-    details > summary:hover::after {
-        opacity: 1;
-        color: var(--accent);
-    }
-    details[open] > summary::after { content: 'Hide Abstract'; }
 
-    details summary a {
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        color: var(--text);
-        font-size: 1.1rem;
-        text-decoration: none; /* Summary links are the exception to the underline rule */
+    details[open] > summary::after {
+      content: "Close";
     }
-    details summary a:hover {
-        color: var(--accent);
-        text-decoration: underline;
+
+    details > summary:hover::after {
+      color: var(--accent);
+    }
+
+    .work-title {
+      display: block;
+      color: var(--text);
+      font-size: 1.18rem;
+      font-weight: 600;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+
+    .work-title:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+    }
+
+    .work-meta {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.45;
     }
 
     .abstract {
-      padding: 1rem 0 0 1.5rem;
+      max-width: 45rem;
       margin-top: 1rem;
-      border-left: 2px solid var(--accent);
-      font-size: 0.95rem;
-      opacity: 0.8;
+      padding: 0.15rem 0 0 1.25rem;
+      border-left: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.75;
     }
+
     .abstract p {
-        margin: 0;
+      margin: 0;
     }
 
-    /* CV BUTTON */
-    .download-button {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 0.75rem 1.5rem;
-      background: transparent;
+    .download-link {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.35rem;
       color: var(--text);
-      border: 1px solid var(--text);
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
       text-decoration: none;
-      font-family: 'IBM Plex Mono', monospace;
-      transition: all 0.2s ease;
-    }
-    .download-button:hover {
-      background: var(--text);
-      color: var(--bg);
-      border-color: var(--text);
     }
 
-    /* FOOTER */
-    footer {
-      text-align: center;
-      padding: 2rem 1.5rem;
-      font-size: 0.9rem;
-      opacity: 0.6;
-      border-top: 1px solid var(--border);
+    .download-link:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
     }
 
-    /* RESPONSIVE DESIGN FOR MOBILE */
     @media (max-width: 768px) {
       body {
-        font-size: 16px;
+        font-size: 17px;
       }
 
-      main, header {
-        padding: 2.5rem 1rem;
+      .theme-toggle {
+        top: 0.75rem;
+        right: 0.75rem;
       }
 
-      h1 { font-size: 2rem; }
-      h2 { font-size: 1.5rem; }
+      header {
+        display: block;
+        padding: 4.5rem 1.25rem 3rem;
+      }
 
       .header-content {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 2rem;
+      }
+
+      .profile-pic {
+        width: 6.5rem;
+        height: 6.5rem;
+      }
+
+      .header-text h1 {
+        font-size: 3.25rem;
+        line-height: 1;
+      }
+
+      .header-text p {
+        font-size: 1.15rem;
       }
 
       .contact-info {
-        text-align: center;
+        margin-top: 2rem;
+      }
+
+      .site-links {
+        margin-top: 1.25rem;
+      }
+
+      main {
+        padding: 0 1.25rem 3rem;
+      }
+
+      section {
+        display: block;
+        padding: 3rem 0;
+      }
+
+      section > h2 {
+        margin: 0 0 1.5rem;
+      }
+
+      details > summary {
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+      }
+
+      details > summary::after {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 0;
+      }
+
+      .abstract {
+        padding-left: 1rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .header-text h1 {
+        font-size: 2.75rem;
       }
     }
 
   </style>
 </head>
 <body>
-<button aria-label="Toggle dark mode" class="toggle-button" onclick="toggleDarkMode()"><span id="mode-label">🌞</span></button>
+<button aria-label="Switch to dark mode" class="theme-toggle" onclick="toggleDarkMode()"><span aria-hidden="true" id="mode-label">☾</span></button>
 <header>
 <div class="header-content">
 <img alt="Pratik Shastri" class="profile-pic" src="788f16b6-cb0b-4319-9256-96ad4916cb15.JPG"/>
@@ -290,6 +447,9 @@
             Alternate email: <a href="mailto:pratikshastri28@gmail.com">pratikshastri28 AT gmail DOT com</a>
 </p>
 </div>
+<nav aria-label="Site links" class="site-links">
+<a href="notes/index.html">Notes</a>
+</nav>
 </header>
 <main>
 <section id="about">
@@ -301,7 +461,10 @@
 
 
 <h3>Publications</h3>
-<ul><li><details><summary><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2026.115" rel="noopener noreferrer" target="_blank">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a> - ITCS 2026</summary><div class="abstract">
+<ul><li><details><summary>
+<a class="work-title" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2026.115" rel="noopener noreferrer" target="_blank">Lower Bounds for Noncommutative Circuits with Low Syntactic Degree</a>
+<span class="work-meta">ITCS 2026</span>
+</summary><div class="abstract">
 <p>
 				Proving lower bounds on the size of noncommutative arithmetic circuits is an important problem in arithmetic circuit complexity. For explicit $n$ variate polynomials of degree $\Theta(n)$, the best known general bound is $\Omega(n \log n)$. Recent work of Chatterjee and Hrubeš has provided stronger $(\Omega(n^2))$ bounds for the restricted class of homogeneous circuits.
 
@@ -311,7 +474,8 @@
 <li>
 <details>
 <summary>
-<a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.FSTTCS.2025.49" rel="noopener noreferrer" target="_blank">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a> - FSTTCS 2025, joint work with C. Ramya
+<a class="work-title" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.FSTTCS.2025.49" rel="noopener noreferrer" target="_blank">On the Hardness of Order Finding and Equivalence Testing for ROABPs</a>
+<span class="work-meta">FSTTCS 2025 · joint work with C. Ramya</span>
 		            </summary>
 <div class="abstract">
 <p>The complexity of representing a polynomial by a Read-Once Oblivious Algebraic Branching Program (ROABP) is highly dependent on the chosen variable ordering. Bhargava et al. prove that finding the optimal ordering is NP-hard, and provide some evidence (based on the Small Set Expansion hypothesis) that it is also hard to approximate the optimal ROABP width. In another work, Baraskar et al. show that it is NP-hard to test whether a polynomial is in the $\mathrm{GL}_n$ orbit of a polynomial of sparsity at most $s$.
@@ -323,7 +487,8 @@
 <li>
 <details>
 <summary>
-<a href="https://doi.org/10.4230/LIPIcs.APPROX/RANDOM.2025.56" rel="noopener noreferrer" target="_blank">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a> - RANDOM 2025, joint work with C. Ramya and Partha Mukhopadhyay
+<a class="work-title" href="https://doi.org/10.4230/LIPIcs.APPROX/RANDOM.2025.56" rel="noopener noreferrer" target="_blank">Efficient Polynomial Identity Testing Over Nonassociative Algebras</a>
+<span class="work-meta">RANDOM 2025 · joint work with C. Ramya and Partha Mukhopadhyay</span>
             </summary>
 <div class="abstract">
 <p>We design the first efficient polynomial identity testing algorithms over the nonassociative polynomial algebra. In particular, multiplication among the formal variables is commutative but it is not associative. This complements the strong lower bound results obtained over this algebra by Hrubeš, Yehudayoff, and Wigderson (CCC 2010) and Fijalkow, Lagarde, Ohlmann, and Serre (Computational Complexity 2021) from the identity testing perspective. Our main results are the following:
@@ -339,7 +504,8 @@
 <li>
 <details>
 <summary>
-<a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" rel="noopener noreferrer" target="_blank">Lower Bounds for Planar Arithmetic Circuits</a> - ITCS 2024, joint work with C. Ramya
+<a class="work-title" href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITCS.2024.91" rel="noopener noreferrer" target="_blank">Lower Bounds for Planar Arithmetic Circuits</a>
+<span class="work-meta">ITCS 2024 · joint work with C. Ramya</span>
             </summary>
 <div class="abstract">
 <p>Arithmetic circuits are a natural well-studied model for computing multivariate polynomials over a field.
@@ -355,10 +521,11 @@ In addition to this, we look at multi-output planar circuits and show $\Omega(n^
 <li>
 <details>
 <summary>
-<a href="https://arxiv.org/abs/2604.20575" rel="noopener noreferrer" target="_blank">A Quadratic Lower Bound for Noncommutative Circuits</a> - arXiv 2026
+<a class="work-title" href="https://arxiv.org/abs/2604.20575" rel="noopener noreferrer" target="_blank">A Quadratic Lower Bound for Noncommutative Circuits</a>
+<span class="work-meta">arXiv 2026</span>
             </summary>
 <div class="abstract">
-<p>We prove that every fan-in $2$ noncommutative arithmetic circuit computing the palindrome polynomial has size $\Omega(n^2)$. The proof builds on and refines a previous work of the author. The new ingredients in the proof were generated by Gemini 3.1 Pro.</p>
+<p>We prove that every fan-in $2$ noncommutative arithmetic circuit computing the $n$-variate degree $d$ palindrome polynomial has size $\Omega(nd)$. In particular, when $d=n$ we obtain an $\Omega(n^2)$ lower bound. The proof builds on and refines a previous work of the author. Key ideas in the proof were generated by Gemini 3.1 Pro.</p>
 </div>
 </details>
 </li>
@@ -366,19 +533,21 @@ In addition to this, we look at multi-output planar circuits and show $\Omega(n^
 </section>
 <section id="cv">
 <h2>Curriculum Vitae</h2>
-<a class="download-button" href="CV.pdf" rel="noopener noreferrer" target="_blank">Download CV</a>
+<a class="download-link" href="CV.pdf" rel="noopener noreferrer" target="_blank">Download CV <span aria-hidden="true">↗</span></a>
 </section>
 </main>
-<footer>
-<p>© <span id="year"></span> Pratik Shastri</p>
-</footer>
 <script>
+    function setThemeControl(isDarkMode) {
+      document.getElementById('mode-label').textContent = isDarkMode ? '☼' : '☾';
+      document.querySelector('.theme-toggle').setAttribute('aria-label', isDarkMode ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+
     function toggleDarkMode() {
       const body = document.body;
       body.classList.toggle('dark');
       const isDarkMode = body.classList.contains('dark');
       localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-      document.getElementById('mode-label').textContent = isDarkMode ? '🌙' : '🌞';
+      setThemeControl(isDarkMode);
     }
 
     window.onload = () => {
@@ -386,8 +555,7 @@ In addition to this, we look at multi-output planar circuits and show $\Omega(n^
       if (isDarkMode) {
         document.body.classList.add('dark');
       }
-      document.getElementById('mode-label').textContent = isDarkMode ? '🌙' : '🌞';
-      document.getElementById('year').textContent = new Date().getFullYear();
+      setThemeControl(isDarkMode);
 
       renderMathInElement(document.body, {
           delimiters: [

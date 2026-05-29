@@ -1,2 +1,4 @@
 
 .DS_Store
+notes-data/editor.log
+scripts/__pycache__/
