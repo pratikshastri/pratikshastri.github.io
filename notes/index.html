@@ -166,6 +166,23 @@
       line-height: 1.45;
     }
 
+    .notes-page {
+      max-width: 1120px;
+    }
+
+    .notes-hero {
+      position: relative;
+      max-width: none;
+      margin-bottom: 3.75rem;
+      padding-bottom: 4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .notes-hero h1 {
+      font-size: 6.2rem;
+      line-height: 0.9;
+    }
+
     section {
       display: grid;
       grid-template-columns: 11rem minmax(0, 1fr);
@@ -186,28 +203,61 @@
       grid-column: 2;
     }
 
+    .notes-index-section {
+      grid-template-columns: 9rem minmax(0, 1fr);
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .notes-index {
+      max-width: 780px;
+    }
+
     .note-list {
+      counter-reset: note;
       list-style: none;
       margin: 0;
       padding: 0;
-    }
-
-    .note-list li {
-      padding: 1.35rem 0;
       border-top: 1px solid var(--rule);
     }
 
-    .note-list li:first-child {
-      padding-top: 0;
-      border-top: 0;
+    .note-list li {
+      counter-increment: note;
+      display: grid;
+      grid-template-columns: 4.5rem minmax(0, 1fr);
+      gap: 1.5rem;
+      padding: 1.7rem 0 1.85rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .note-list li::before {
+      content: counter(note, decimal-leading-zero);
+      margin-top: 0.12rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .note-list .empty-note-item {
+      display: block;
+      padding: 2.4rem 0 2.8rem;
+    }
+
+    .note-list .empty-note-item::before {
+      display: none;
+    }
+
+    .note-entry {
+      min-width: 0;
     }
 
     .note-title {
       display: inline-block;
       color: var(--text);
-      font-size: 1.2rem;
-      font-weight: 600;
-      line-height: 1.35;
+      font-size: 1.75rem;
+      font-weight: 500;
+      line-height: 1.12;
       text-decoration: none;
     }
 
@@ -219,7 +269,8 @@
 
     .note-meta {
       display: block;
-      margin-top: 0.35rem;
+      max-width: 36rem;
+      margin-top: 0.7rem;
       color: var(--muted);
       font-size: 1rem;
       line-height: 1.45;
@@ -228,8 +279,20 @@
     .empty-note {
       max-width: 38rem;
       color: var(--muted);
-      font-size: 1.1rem;
+      font-size: 1.35rem;
+      font-style: italic;
       line-height: 1.65;
+    }
+
+    .empty-note::before {
+      content: "∅";
+      display: block;
+      margin-bottom: 0.8rem;
+      color: var(--accent);
+      font-size: 3.4rem;
+      font-style: normal;
+      line-height: 1;
+      opacity: 0.72;
     }
 
     .note-article {
@@ -256,6 +319,8 @@
     .note-article ol,
     .note-article pre,
     .note-article blockquote,
+    .note-figure,
+    .math-env,
     .math-display-source {
       margin: 0 0 1.2rem;
     }
@@ -286,6 +351,94 @@
       padding-left: 1.25rem;
       border-left: 1px solid var(--rule);
       color: var(--muted);
+    }
+
+    .note-figure {
+      padding: 0.7rem 0 0.25rem;
+    }
+
+    .note-figure img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .note-figure figcaption {
+      max-width: 36rem;
+      margin-top: 0.65rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    .math-env {
+      padding: 0.1rem 0 0.1rem 1.15rem;
+      border-left: 1px solid var(--rule);
+    }
+
+    .math-env-heading {
+      margin: 0 0 0.45rem;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .math-env-label {
+      font-variant-caps: small-caps;
+      font-weight: 600;
+    }
+
+    .math-env-title {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .math-env-body > :last-child {
+      margin-bottom: 0;
+    }
+
+    .math-env-theorem .math-env-body,
+    .math-env-lemma .math-env-body,
+    .math-env-proposition .math-env-body,
+    .math-env-corollary .math-env-body {
+      font-style: italic;
+    }
+
+    .math-env-definition .math-env-body,
+    .math-env-example .math-env-body,
+    .math-env-remark .math-env-body,
+    .math-env-proof .math-env-body {
+      font-style: normal;
+    }
+
+    .math-env-proof {
+      border-left-color: var(--accent);
+    }
+
+    .math-env-proof .math-env-label {
+      font-style: italic;
+      font-variant-caps: normal;
+      font-weight: 500;
+    }
+
+    .qed-symbol {
+      display: inline-block;
+      margin-left: 0.45em;
+      color: var(--muted);
+      font-size: 0.78em;
+      font-style: normal;
+      line-height: 1;
+      transform: translateY(-0.03em);
+    }
+
+    .qed-line {
+      margin-top: -0.35rem;
+      text-align: right;
+    }
+
+    .qed-line .qed-symbol {
+      margin-left: 0;
     }
 
     .citation {
@@ -370,6 +523,16 @@
         font-size: 1.15rem;
       }
 
+      .notes-hero {
+        margin-bottom: 3rem;
+        padding-bottom: 3rem;
+      }
+
+      .notes-hero h1 {
+        font-size: 3.5rem;
+        line-height: 1;
+      }
+
       section {
         display: block;
         padding: 3rem 0;
@@ -377,6 +540,20 @@
 
       section > h2 {
         margin: 0 0 1.5rem;
+      }
+
+      .notes-index-section {
+        padding-top: 0;
+      }
+
+      .note-list li {
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .note-title {
+        font-size: 1.42rem;
+        line-height: 1.2;
       }
     }
 
@@ -390,19 +567,21 @@
 </head>
 <body>
 <button aria-label="Switch to dark mode" class="theme-toggle" onclick="toggleDarkMode()"><span aria-hidden="true" id="mode-label">☾</span></button>
-<div class="page">
+<div class="page notes-page">
 <nav aria-label="Site links" class="topline">
 <a href="../index.html">Home</a>
 </nav>
-<header>
+<header class="notes-hero">
 <h1>Notes</h1>
 </header>
 <main>
-<section>
+<section class="notes-index-section">
 <h2>Index</h2>
+<div class="notes-index">
 <ul class="note-list">
-<li><p class="empty-note">No notes yet.</p></li>
+<li class="empty-note-item"><p class="empty-note">No notes yet.</p></li>
 </ul>
+</div>
 </section>
 </main>
 </div>

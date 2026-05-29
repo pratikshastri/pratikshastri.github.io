@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import mimetypes
 import os
 import re
+import shutil
 import sys
 import threading
 import time
@@ -25,6 +27,7 @@ DATA_DIR = ROOT / "notes-data"
 DATA_FILE = DATA_DIR / "notes.json"
 PORT_FILE = DATA_DIR / "editor.port"
 NOTES_DIR = ROOT / "notes"
+ASSETS_DIR = NOTES_DIR / "assets"
 GENERATED_MARKER = "<!-- generated-by-notes-editor -->"
 DEFAULT_LEDE = ""
 PUBLIC_ROOT_FILES = {
@@ -32,6 +35,26 @@ PUBLIC_ROOT_FILES = {
     "CV.pdf",
     "788f16b6-cb0b-4319-9256-96ad4916cb15.JPG",
 }
+MATH_ENVIRONMENTS = {
+    "theorem": "Theorem",
+    "lemma": "Lemma",
+    "proposition": "Proposition",
+    "corollary": "Corollary",
+    "definition": "Definition",
+    "remark": "Remark",
+    "example": "Example",
+    "proof": "Proof",
+}
+IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+IMAGE_MIME_TYPES = {
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+}
+MAX_IMAGE_BYTES = 12 * 1024 * 1024
 
 
 SITE_CSS = r"""
@@ -188,6 +211,23 @@ SITE_CSS = r"""
       line-height: 1.45;
     }
 
+    .notes-page {
+      max-width: 1120px;
+    }
+
+    .notes-hero {
+      position: relative;
+      max-width: none;
+      margin-bottom: 3.75rem;
+      padding-bottom: 4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .notes-hero h1 {
+      font-size: 6.2rem;
+      line-height: 0.9;
+    }
+
     section {
       display: grid;
       grid-template-columns: 11rem minmax(0, 1fr);
@@ -208,28 +248,61 @@ SITE_CSS = r"""
       grid-column: 2;
     }
 
+    .notes-index-section {
+      grid-template-columns: 9rem minmax(0, 1fr);
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .notes-index {
+      max-width: 780px;
+    }
+
     .note-list {
+      counter-reset: note;
       list-style: none;
       margin: 0;
       padding: 0;
-    }
-
-    .note-list li {
-      padding: 1.35rem 0;
       border-top: 1px solid var(--rule);
     }
 
-    .note-list li:first-child {
-      padding-top: 0;
-      border-top: 0;
+    .note-list li {
+      counter-increment: note;
+      display: grid;
+      grid-template-columns: 4.5rem minmax(0, 1fr);
+      gap: 1.5rem;
+      padding: 1.7rem 0 1.85rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .note-list li::before {
+      content: counter(note, decimal-leading-zero);
+      margin-top: 0.12rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .note-list .empty-note-item {
+      display: block;
+      padding: 2.4rem 0 2.8rem;
+    }
+
+    .note-list .empty-note-item::before {
+      display: none;
+    }
+
+    .note-entry {
+      min-width: 0;
     }
 
     .note-title {
       display: inline-block;
       color: var(--text);
-      font-size: 1.2rem;
-      font-weight: 600;
-      line-height: 1.35;
+      font-size: 1.75rem;
+      font-weight: 500;
+      line-height: 1.12;
       text-decoration: none;
     }
 
@@ -241,7 +314,8 @@ SITE_CSS = r"""
 
     .note-meta {
       display: block;
-      margin-top: 0.35rem;
+      max-width: 36rem;
+      margin-top: 0.7rem;
       color: var(--muted);
       font-size: 1rem;
       line-height: 1.45;
@@ -250,8 +324,20 @@ SITE_CSS = r"""
     .empty-note {
       max-width: 38rem;
       color: var(--muted);
-      font-size: 1.1rem;
+      font-size: 1.35rem;
+      font-style: italic;
       line-height: 1.65;
+    }
+
+    .empty-note::before {
+      content: "∅";
+      display: block;
+      margin-bottom: 0.8rem;
+      color: var(--accent);
+      font-size: 3.4rem;
+      font-style: normal;
+      line-height: 1;
+      opacity: 0.72;
     }
 
     .note-article {
@@ -278,6 +364,8 @@ SITE_CSS = r"""
     .note-article ol,
     .note-article pre,
     .note-article blockquote,
+    .note-figure,
+    .math-env,
     .math-display-source {
       margin: 0 0 1.2rem;
     }
@@ -308,6 +396,94 @@ SITE_CSS = r"""
       padding-left: 1.25rem;
       border-left: 1px solid var(--rule);
       color: var(--muted);
+    }
+
+    .note-figure {
+      padding: 0.7rem 0 0.25rem;
+    }
+
+    .note-figure img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .note-figure figcaption {
+      max-width: 36rem;
+      margin-top: 0.65rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    .math-env {
+      padding: 0.1rem 0 0.1rem 1.15rem;
+      border-left: 1px solid var(--rule);
+    }
+
+    .math-env-heading {
+      margin: 0 0 0.45rem;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .math-env-label {
+      font-variant-caps: small-caps;
+      font-weight: 600;
+    }
+
+    .math-env-title {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .math-env-body > :last-child {
+      margin-bottom: 0;
+    }
+
+    .math-env-theorem .math-env-body,
+    .math-env-lemma .math-env-body,
+    .math-env-proposition .math-env-body,
+    .math-env-corollary .math-env-body {
+      font-style: italic;
+    }
+
+    .math-env-definition .math-env-body,
+    .math-env-example .math-env-body,
+    .math-env-remark .math-env-body,
+    .math-env-proof .math-env-body {
+      font-style: normal;
+    }
+
+    .math-env-proof {
+      border-left-color: var(--accent);
+    }
+
+    .math-env-proof .math-env-label {
+      font-style: italic;
+      font-variant-caps: normal;
+      font-weight: 500;
+    }
+
+    .qed-symbol {
+      display: inline-block;
+      margin-left: 0.45em;
+      color: var(--muted);
+      font-size: 0.78em;
+      font-style: normal;
+      line-height: 1;
+      transform: translateY(-0.03em);
+    }
+
+    .qed-line {
+      margin-top: -0.35rem;
+      text-align: right;
+    }
+
+    .qed-line .qed-symbol {
+      margin-left: 0;
     }
 
     .citation {
@@ -392,6 +568,16 @@ SITE_CSS = r"""
         font-size: 1.15rem;
       }
 
+      .notes-hero {
+        margin-bottom: 3rem;
+        padding-bottom: 3rem;
+      }
+
+      .notes-hero h1 {
+        font-size: 3.5rem;
+        line-height: 1;
+      }
+
       section {
         display: block;
         padding: 3rem 0;
@@ -399,6 +585,20 @@ SITE_CSS = r"""
 
       section > h2 {
         margin: 0 0 1.5rem;
+      }
+
+      .notes-index-section {
+        padding-top: 0;
+      }
+
+      .note-list li {
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .note-title {
+        font-size: 1.42rem;
+        line-height: 1.2;
       }
     }
 
@@ -510,11 +710,16 @@ EDITOR_HTML = r"""
     .shell {
       display: grid;
       grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
+      height: 100vh;
       min-height: 100vh;
+      overflow: hidden;
     }
 
     aside {
-      min-height: 100vh;
+      height: 100vh;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 2rem;
       border-right: 1px solid var(--rule);
     }
@@ -540,16 +745,47 @@ EDITOR_HTML = r"""
     }
 
     .sidebar-actions {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.5rem;
+      display: grid;
+      gap: 0;
+      margin: 0 0 1.65rem;
+      padding: 0.2rem 0;
+      border-top: 1px solid var(--rule);
       border-bottom: 1px solid var(--rule);
+    }
+
+    .sidebar-actions .text-button {
+      position: relative;
+      width: 100%;
+      padding: 0.7rem 0 0.7rem 1rem;
+      border-bottom: 1px solid var(--rule);
+      text-align: left;
+    }
+
+    .sidebar-actions .text-button:last-child {
+      border-bottom: 0;
+    }
+
+    .sidebar-actions .text-button::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 0.36rem;
+      border-top: 1px solid var(--accent);
+      transform: translateY(-50%);
+      opacity: 0.72;
+    }
+
+    .sidebar-actions .text-button:hover,
+    .sidebar-actions .text-button:focus-visible {
+      color: var(--accent);
+      outline: 0;
     }
 
     .text-button {
       color: var(--text);
       font-weight: 600;
+      line-height: 1.3;
       text-decoration: none;
     }
 
@@ -561,6 +797,61 @@ EDITOR_HTML = r"""
       color: var(--muted);
       cursor: default;
       opacity: 0.55;
+    }
+
+    .note-actions {
+      display: grid;
+      margin: 1.35rem 0 1.4rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .note-actions .text-button {
+      position: relative;
+      width: 100%;
+      padding: 0.72rem 0 0.72rem 1rem;
+      border-bottom: 1px solid var(--rule);
+      color: var(--text);
+      text-align: left;
+    }
+
+    .note-actions .text-button::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 0.38rem;
+      border-top: 1px solid var(--accent);
+      transform: translateY(-50%);
+      opacity: 0.75;
+    }
+
+    .note-actions .text-button:hover,
+    .note-actions .text-button:focus-visible {
+      color: var(--accent);
+      outline: 0;
+    }
+
+    .note-actions .text-button[disabled]::before {
+      border-color: var(--muted);
+      opacity: 0.35;
+    }
+
+    .note-actions .text-button[disabled],
+    .note-actions .text-button[disabled]:hover {
+      color: var(--muted);
+      cursor: default;
+      opacity: 0.55;
+    }
+
+    .note-actions .text-button.danger::before {
+      border-color: var(--danger);
+    }
+
+    .confirm-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-top: 0.2rem;
     }
 
     .note-list {
@@ -607,7 +898,10 @@ EDITOR_HTML = r"""
 
     main {
       min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
       padding: 2rem 2.5rem 4rem;
+      overscroll-behavior: contain;
     }
 
     .topbar {
@@ -818,14 +1112,48 @@ EDITOR_HTML = r"""
     }
 
     .reference-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 1rem;
       margin-bottom: 0.85rem;
     }
 
-    .reference-tools,
+    .reference-tools {
+      display: grid;
+      gap: 0;
+      margin-top: 0.75rem;
+      padding: 0.2rem 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .reference-tools .text-button {
+      position: relative;
+      width: 100%;
+      padding: 0.66rem 0 0.66rem 1rem;
+      border-bottom: 1px solid var(--rule);
+      color: var(--text);
+      text-align: left;
+    }
+
+    .reference-tools .text-button:last-child {
+      border-bottom: 0;
+    }
+
+    .reference-tools .text-button::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 0.36rem;
+      border-top: 1px solid var(--accent);
+      transform: translateY(-50%);
+      opacity: 0.72;
+    }
+
+    .reference-tools .text-button:hover,
+    .reference-tools .text-button:focus-visible {
+      color: var(--accent);
+      outline: 0;
+    }
+
     .reference-actions {
       display: flex;
       flex-wrap: wrap;
@@ -859,6 +1187,43 @@ EDITOR_HTML = r"""
     .reference-warnings {
       margin-bottom: 0.8rem;
       color: var(--danger);
+    }
+
+    .images-editor {
+      margin-top: 1.8rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .images-editor h2 {
+      margin: 0 0 0.8rem;
+      font-size: 1.15rem;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .image-drop {
+      display: block;
+      width: 100%;
+      padding: 0.85rem 0 0.9rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      color: var(--muted);
+      text-align: left;
+    }
+
+    .image-drop.active,
+    .image-drop:hover,
+    .image-drop:focus-visible {
+      color: var(--accent);
+      outline: 0;
+    }
+
+    .image-status {
+      margin: 0.75rem 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.4;
     }
 
     .reference-list-editor {
@@ -976,7 +1341,9 @@ EDITOR_HTML = r"""
     .note-body ol,
     .note-body pre,
     .note-body blockquote,
+    .note-figure,
     .math-display-source,
+    .math-env,
     .guide p,
     .guide ul,
     .guide pre {
@@ -1009,6 +1376,94 @@ EDITOR_HTML = r"""
       padding-left: 1.25rem;
       border-left: 1px solid var(--rule);
       color: var(--muted);
+    }
+
+    .note-figure {
+      padding: 0.7rem 0 0.25rem;
+    }
+
+    .note-figure img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .note-figure figcaption {
+      max-width: 36rem;
+      margin-top: 0.65rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    .math-env {
+      padding: 0.1rem 0 0.1rem 1.15rem;
+      border-left: 1px solid var(--rule);
+    }
+
+    .math-env-heading {
+      margin: 0 0 0.45rem;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .math-env-label {
+      font-variant-caps: small-caps;
+      font-weight: 600;
+    }
+
+    .math-env-title {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .math-env-body > :last-child {
+      margin-bottom: 0;
+    }
+
+    .math-env-theorem .math-env-body,
+    .math-env-lemma .math-env-body,
+    .math-env-proposition .math-env-body,
+    .math-env-corollary .math-env-body {
+      font-style: italic;
+    }
+
+    .math-env-definition .math-env-body,
+    .math-env-example .math-env-body,
+    .math-env-remark .math-env-body,
+    .math-env-proof .math-env-body {
+      font-style: normal;
+    }
+
+    .math-env-proof {
+      border-left-color: var(--accent);
+    }
+
+    .math-env-proof .math-env-label {
+      font-style: italic;
+      font-variant-caps: normal;
+      font-weight: 500;
+    }
+
+    .qed-symbol {
+      display: inline-block;
+      margin-left: 0.45em;
+      color: var(--muted);
+      font-size: 0.78em;
+      font-style: normal;
+      line-height: 1;
+      transform: translateY(-0.03em);
+    }
+
+    .qed-line {
+      margin-top: -0.35rem;
+      text-align: right;
+    }
+
+    .qed-line .qed-symbol {
+      margin-left: 0;
     }
 
     .citation {
@@ -1081,15 +1536,22 @@ EDITOR_HTML = r"""
     @media (max-width: 900px) {
       .shell {
         display: block;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
       }
 
       aside {
+        height: auto;
         min-height: auto;
+        overflow: visible;
         border-right: 0;
         border-bottom: 1px solid var(--rule);
       }
 
       main {
+        height: auto;
+        overflow: visible;
         padding: 2rem 1.5rem 3rem;
       }
 
@@ -1161,7 +1623,7 @@ EDITOR_HTML = r"""
 <div class="bibtex-import" id="bibtexPanel" hidden>
 <label>
 <span class="label-text">BibTeX</span>
-<textarea id="bibtexInput" spellcheck="false" placeholder="@article{nisan1991,&#10;  author = {Nisan, Noam},&#10;  title = {Lower bounds for non-commutative computation},&#10;  year = {1991}&#10;}"></textarea>
+<textarea id="bibtexInput" spellcheck="false" placeholder="@misc{teacup2026,&#10;  author = {Tuesday Teacup},&#10;  title = {Sideways Calendars and Other Soups},&#10;  year = {2026}&#10;}"></textarea>
 </label>
 <div class="reference-actions">
 <button class="text-button" id="importBibtexBtn" type="button">Add from BibTeX</button>
@@ -1183,16 +1645,22 @@ EDITOR_HTML = r"""
 <textarea id="description" placeholder="One or two quiet sentences for the notes index."></textarea>
 </label>
 <p class="field-note" id="slugNote">URL appears after saving.</p>
-<p class="visibility-note" id="visibilityNote">New notes publish when saved.</p>
-<div class="sidebar-actions">
-<button class="text-button" id="saveBtn" type="button">Save</button>
-<button class="text-button" id="visibilityBtn" type="button">Hide from site</button>
-<button class="text-button" id="openPageBtn" type="button">Open site page</button>
+<p class="visibility-note" id="visibilityNote">New notes save as drafts until published.</p>
+<section class="images-editor" aria-labelledby="imagesHeading">
+<h2 id="imagesHeading">Images</h2>
+<button class="image-drop" id="imageDrop" type="button">Choose image, drop one here, or paste into the editor.</button>
+<input accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden id="imageInput" type="file"/>
+<p class="image-status" id="imageStatus">Images are copied into this note and inserted at the cursor.</p>
+</section>
+<div class="note-actions">
+<button class="text-button" id="saveBtn" type="button">Save draft</button>
+<button class="text-button" id="visibilityBtn" type="button">Publish</button>
+<button class="text-button" id="openPageBtn" type="button">Open page</button>
 <button class="text-button danger" id="deleteBtn" type="button">Delete</button>
 </div>
 <div class="confirm-panel" id="deleteConfirm">
 <p><span class="confirm-title" id="deleteConfirmTitle">Delete this note?</span><br/>This removes it from the editor and from the generated site.</p>
-<div class="sidebar-actions">
+<div class="confirm-actions">
 <button class="text-button" id="cancelDeleteBtn" type="button">Cancel</button>
 <button class="text-button danger" id="confirmDeleteBtn" type="button">Delete permanently</button>
 </div>
@@ -1210,8 +1678,8 @@ EDITOR_HTML = r"""
 
 <section class="panel" id="guidePanel">
 <div class="guide">
-<h1>Markdown and TeX</h1>
-<p class="lede">Use plain text for paragraphs, a few Markdown marks for structure, and ordinary LaTeX delimiters for mathematics.</p>
+<h1>Markdown, TeX, and Blocks</h1>
+<p class="lede">Use plain text for paragraphs, Markdown marks for structure, ordinary LaTeX delimiters for mathematics, and colon blocks for theorem-style exposition.</p>
 
 <h2>Headings</h2>
 <pre><code># Large heading
@@ -1231,23 +1699,52 @@ EDITOR_HTML = r"""
 2. second step</code></pre>
 
 <h2>Links</h2>
-<pre><code>[arXiv](https://arxiv.org/)</code></pre>
+<pre><code>[the cupboard door](https://example.com/sideways-cupboard)</code></pre>
+
+<h2>Images</h2>
+<p>Use the Images section while editing to choose, drop, or paste a picture. The editor copies it into the note and inserts the Markdown for you.</p>
+<pre><code>![A diagram of a teacup orbit](assets/spoon-weather/teacup-orbit.svg)</code></pre>
+<p>The text in square brackets becomes the caption. Keep it short enough that the saucer does not begin lecturing.</p>
 
 <h2>Citations</h2>
 <pre><code>Type [@ and choose a saved reference from the dropdown.
 
 Basic citation:
-[@nisan1991]
+[@teacup2026]
 
 With a locator:
-[@nisan1991, Theorem 2.1]
+[@teacup2026, Appendix Cloud]
 
 Several references:
-[@nisan1991; @raz2013]</code></pre>
+[@teacup2026; @toast2024]</code></pre>
 <p>Use Paste BibTeX in the References section to add one entry or many entries at once. The dropdown filters by citation-key prefix as you type.</p>
 
+<h2>Theorem-Style Blocks</h2>
+<p>Begin a block with three colons, the block name, and an optional title in square brackets. End it with three colons on its own line.</p>
+<pre><code>::: theorem [Umbrella cancellation]
+If $u$ is a sideways umbrella, then
+$$
+u^3 + 7 = v_{\text{pudding}}.
+$$
+:::</code></pre>
+<p>The numbered block names are theorem, lemma, proposition, corollary, definition, remark, and example. Proofs are labeled Proof and end with a square.</p>
+<pre><code>::: proof
+Fold the teacup twice, rename the missing spoon as $z$, and wait for the bracket to apologize.
+:::</code></pre>
+<p>Inside a block you can still use paragraphs, lists, citations, inline math, and display math.</p>
+<pre><code>::: definition [Soggy calendar]
+A calendar is called soggy if every page has exactly $q^2 + 1$ corners and no opinion about soup.
+
+- the first corner is ceremonial
+- the second corner is missing
+:::
+
+::: remark [Saucer marginalia]
+The saucer coefficient was already suspicious [@teacup2026, drawer 4].
+:::</code></pre>
+
 <h2>Mathematics</h2>
-<pre><code>Inline math uses dollar signs: $\Omega(nd)$.
+<pre><code>Inline math uses dollar signs: $x^3 + 7$.
 
 Display math uses double dollar signs:
 
@@ -1256,20 +1753,48 @@ $$
 $$</code></pre>
 
 <h2>A Tiny Note</h2>
-<pre><code>## Palindrome Polynomial
+<pre><code>## Spoon Weather and the Collapsing Teacup
 
-We consider the $n$-variate degree $d$ palindrome polynomial.
+The teacup has decided that Tuesday is a square root.
 
-The lower bound is:
+![A diagram of the teacup orbit](assets/spoon-weather/teacup-orbit.svg)
+
+::: definition [Noisy umbrella]
+An umbrella $u$ is noisy if it commutes with every spoon but refuses to distribute over jam.
+:::
+
+::: theorem [Toast drift]
+Every unusually patient umbrella $u$ satisfies
+$$
+u^2 + 4u = \text{jam}.
+$$
+:::
+
+::: proof
+Place the denominator in a drawer. The numerator then hums at the window, so the leftover teacup term becomes
 
 $$
-\Omega(nd).
+x^3 + 7 = \text{probably soup}.
 $$
 
-The proof has two ingredients:
+Subtract the window and collect the crumbs.
+:::
 
-- a rank measure
-- a decomposition argument</code></pre>
+::: example [Calendar residue]
+The same method shows that
+$$
+\sum_{i=1}^n i^2 = \text{approximately Thursday}.
+$$
+:::
+
+::: remark
+Nothing here should be cited except the invisible cupboard [@toast2024].
+:::
+
+The main ingredients are:
+
+- one sideways calendar
+- three opinions about toast</code></pre>
 </div>
 </section>
 </main>
@@ -1280,7 +1805,7 @@ const state = {
   notes: [],
   currentId: null,
   currentSlug: "",
-  currentPublished: true,
+  currentPublished: false,
   references: [],
   dirty: false,
   mode: "write",
@@ -1311,8 +1836,12 @@ const els = {
   addReferenceBtn: document.getElementById("addReferenceBtn"),
   referenceWarnings: document.getElementById("referenceWarnings"),
   referenceListEditor: document.getElementById("referenceListEditor"),
+  imageDrop: document.getElementById("imageDrop"),
+  imageInput: document.getElementById("imageInput"),
+  imageStatus: document.getElementById("imageStatus"),
   slugNote: document.getElementById("slugNote"),
   visibilityNote: document.getElementById("visibilityNote"),
+  saveBtn: document.getElementById("saveBtn"),
   visibilityBtn: document.getElementById("visibilityBtn"),
   openPageBtn: document.getElementById("openPageBtn"),
   deleteBtn: document.getElementById("deleteBtn"),
@@ -1468,11 +1997,11 @@ function renderReferences() {
     item.innerHTML = `
 <p class="reference-summary">${escapeHtml(reference.key ? `@${reference.key}` : "No key yet")} · ${escapeHtml(referenceSubtitle(reference))}</p>
 <div class="reference-fields">
-<label><span class="label-text">Key</span><input autocomplete="off" data-ref-field="key" value="${escapeHtml(reference.key)}" placeholder="nisan1991"/></label>
-<label><span class="label-text">Author</span><input autocomplete="off" data-ref-field="author" value="${escapeHtml(reference.author)}" placeholder="Noam Nisan"/></label>
-<label><span class="label-text">Year</span><input autocomplete="off" data-ref-field="year" value="${escapeHtml(reference.year)}" placeholder="1991"/></label>
-<label><span class="label-text">Venue</span><input autocomplete="off" data-ref-field="venue" value="${escapeHtml(reference.venue)}" placeholder="STOC, journal, preprint"/></label>
-<label><span class="label-text">Title</span><textarea data-ref-field="title" placeholder="Paper title">${escapeHtml(reference.title)}</textarea></label>
+<label><span class="label-text">Key</span><input autocomplete="off" data-ref-field="key" value="${escapeHtml(reference.key)}" placeholder="teacup2026"/></label>
+<label><span class="label-text">Author</span><input autocomplete="off" data-ref-field="author" value="${escapeHtml(reference.author)}" placeholder="Tuesday Teacup"/></label>
+<label><span class="label-text">Year</span><input autocomplete="off" data-ref-field="year" value="${escapeHtml(reference.year)}" placeholder="2026"/></label>
+<label><span class="label-text">Venue</span><input autocomplete="off" data-ref-field="venue" value="${escapeHtml(reference.venue)}" placeholder="Almanac, preprint, journal"/></label>
+<label><span class="label-text">Title</span><textarea data-ref-field="title" placeholder="Sideways Calendars and Other Soups">${escapeHtml(reference.title)}</textarea></label>
 <label><span class="label-text">DOI or URL</span><textarea data-ref-field="url" placeholder="https://...">${escapeHtml(reference.url || reference.doi)}</textarea></label>
 </div>
 <div class="reference-actions">
@@ -1546,6 +2075,97 @@ function insertReferenceCitation(reference) {
   }
   insertTextAtBody(`[@${key}]`);
   setStatus(`Inserted @${key}.`);
+}
+
+function setImageStatus(message) {
+  els.imageStatus.textContent = message;
+}
+
+function imageAltFromFilename(name) {
+  return String(name || "image")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "image";
+}
+
+function isAcceptedImage(file) {
+  const name = String(file?.name || "").toLowerCase();
+  return Boolean(file && (
+    file.type.startsWith("image/") ||
+    /\.(png|jpe?g|gif|webp|svg)$/.test(name)
+  ));
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error || new Error("Could not read image.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function ensureSavedForImageUpload() {
+  if (!els.title.value.trim()) {
+    setStatus("Give the note a title first.");
+    setImageStatus("Add a title before inserting an image.");
+    els.title.focus();
+    return false;
+  }
+  if (!state.currentId || state.dirty) {
+    setStatus("Saving note before adding image...");
+    const saved = await saveNote();
+    if (!saved) {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function uploadImageFile(file) {
+  if (!isAcceptedImage(file)) {
+    setImageStatus("Choose a PNG, JPEG, GIF, WebP, or SVG image.");
+    return;
+  }
+  const selection = {
+    start: els.body.selectionStart,
+    end: els.body.selectionEnd
+  };
+  const ready = await ensureSavedForImageUpload();
+  if (!ready) return;
+  const maxSelection = els.body.value.length;
+  els.body.setSelectionRange(
+    Math.min(selection.start, maxSelection),
+    Math.min(selection.end, maxSelection)
+  );
+  setImageStatus(`Copying ${file.name}...`);
+  const dataUrl = await readFileAsDataUrl(file);
+  const data = await api("/api/image", {
+    method: "POST",
+    body: JSON.stringify({
+      id: state.currentId,
+      slug: state.currentSlug,
+      filename: file.name,
+      contentType: file.type,
+      dataUrl
+    })
+  });
+  const alt = imageAltFromFilename(data.filename || file.name);
+  insertTextAtBody(`\n\n![${alt}](${data.src})\n\n`);
+  setImageStatus(`Inserted ${data.filename}. Edit the caption text inside the square brackets.`);
+  setStatus("Image inserted. Save the note to keep its placement.");
+}
+
+async function uploadImageFiles(files) {
+  const images = Array.from(files || []).filter(isAcceptedImage);
+  if (!images.length) {
+    setImageStatus("No supported image found.");
+    return;
+  }
+  for (const file of images) {
+    await uploadImageFile(file);
+  }
 }
 
 function parseBibtex(text) {
@@ -1905,11 +2525,12 @@ function fillNote(note) {
   els.body.value = note.body || "";
   updateLifecycleControls();
   renderReferences();
+  setImageStatus("Images are copied into this note and inserted at the cursor.");
   closeCitationSuggestions();
   hideDeleteConfirmation();
   state.dirty = false;
   renderList();
-  setStatus(state.currentId ? `Loaded ${state.currentPublished ? "published" : "hidden"} note.` : "New note.");
+  setStatus(state.currentId ? `Loaded ${state.currentPublished ? "published" : "draft"} note.` : "New draft.");
   if (state.mode === "review") {
     renderPreview();
   }
@@ -1919,10 +2540,11 @@ function updateLifecycleControls() {
   const saved = Boolean(state.currentId);
   els.slugNote.textContent = state.currentSlug ? `URL: notes/${state.currentSlug}.html` : "URL appears after saving.";
   els.visibilityNote.textContent = saved
-    ? (state.currentPublished ? "Published: appears on the public notes page." : "Hidden: editable here, absent from the public site.")
-    : "New notes publish when saved.";
-  els.visibilityBtn.textContent = state.currentPublished ? "Hide from site" : "Publish to site";
-  els.visibilityBtn.disabled = !saved;
+    ? (state.currentPublished ? "Published: appears on the public notes page." : "Draft: saved locally, absent from the public site.")
+    : "New notes save as drafts until published.";
+  els.saveBtn.textContent = state.currentPublished ? "Save changes" : "Save draft";
+  els.visibilityBtn.textContent = state.currentPublished ? "Move to drafts" : "Publish";
+  els.visibilityBtn.disabled = false;
   els.openPageBtn.disabled = !saved || !state.currentPublished;
   els.deleteBtn.disabled = !saved;
 }
@@ -1931,12 +2553,12 @@ function newNote() {
   fillNote({
     id: null,
     slug: "",
-    published: true,
+    published: false,
     title: "",
     date: today(),
     description: "",
     references: [],
-    body: "## A first section\n\nWrite here. Inline math looks like $x^2$.\n\n$$\n\\Omega(nd)\n$$\n"
+    body: "## A first section\n\nWrite here. Inline math looks like $x^2$.\n\n::: theorem [Small fog]\nEvery patient symbol $x$ eventually remembers that display math looks like this:\n\n$$\nx^3\n$$\n:::\n\n::: proof\nMove the teacup three columns left and cancel the suspicious napkin.\n:::\n"
   });
   switchMode("write");
   els.title.focus();
@@ -1961,7 +2583,7 @@ function renderList() {
     button.querySelector(".note-item-title").textContent = note.title || "Untitled note";
     button.querySelector(".note-item-date").innerHTML = `<span></span> · <span class="note-item-status"></span>`;
     button.querySelector(".note-item-date span:first-child").textContent = note.date || "No date";
-    button.querySelector(".note-item-status").textContent = note.published === false ? "Hidden" : "Published";
+    button.querySelector(".note-item-status").textContent = note.published === false ? "Draft" : "Published";
     button.addEventListener("click", () => selectNote(note.id));
     li.appendChild(button);
     els.noteList.appendChild(li);
@@ -1992,12 +2614,15 @@ async function loadNotes() {
   }
 }
 
-async function saveNote() {
+async function saveNote(publishedOverride = null) {
   const note = collectNote();
   if (!note.title) {
     setStatus("Give the note a title first.");
     els.title.focus();
-    return;
+    return null;
+  }
+  if (publishedOverride !== null) {
+    note.published = publishedOverride;
   }
   setStatus("Saving...");
   const data = await api("/api/save", {
@@ -2006,7 +2631,8 @@ async function saveNote() {
   });
   state.notes = data.notes || [];
   fillNote(data.note);
-  setStatus("Saved and rebuilt.");
+  setStatus(note.published ? "Published and rebuilt." : "Draft saved.");
+  return data.note;
 }
 
 function showDeleteConfirmation() {
@@ -2042,24 +2668,7 @@ async function deleteNote() {
 }
 
 async function updateVisibility(published) {
-  if (!state.currentId) {
-    setStatus("Save the note before changing visibility.");
-    return;
-  }
-  if (state.dirty) {
-    setStatus("Save or discard unsaved edits before changing visibility.");
-    return;
-  }
-  const note = collectNote();
-  note.published = published;
-  setStatus(published ? "Publishing..." : "Hiding...");
-  const data = await api("/api/save", {
-    method: "POST",
-    body: JSON.stringify(note)
-  });
-  state.notes = data.notes || [];
-  fillNote(data.note);
-  setStatus(published ? "Published to site." : "Hidden from site.");
+  await saveNote(published);
 }
 
 async function renderPreview() {
@@ -2189,6 +2798,43 @@ els.body.addEventListener("blur", () => {
   window.setTimeout(closeCitationSuggestions, 120);
 });
 els.body.addEventListener("scroll", positionCitationSuggestions);
+els.body.addEventListener("paste", event => {
+  const files = Array.from(event.clipboardData?.files || []);
+  const images = files.filter(isAcceptedImage);
+  if (!images.length) return;
+  event.preventDefault();
+  uploadImageFiles(images).catch(error => {
+    setStatus(error.message);
+    setImageStatus(error.message);
+  });
+});
+els.imageDrop.addEventListener("click", () => els.imageInput.click());
+els.imageInput.addEventListener("change", () => {
+  uploadImageFiles(els.imageInput.files).catch(error => {
+    setStatus(error.message);
+    setImageStatus(error.message);
+  }).finally(() => {
+    els.imageInput.value = "";
+  });
+});
+["dragenter", "dragover"].forEach(type => {
+  els.imageDrop.addEventListener(type, event => {
+    event.preventDefault();
+    els.imageDrop.classList.add("active");
+  });
+});
+["dragleave", "drop"].forEach(type => {
+  els.imageDrop.addEventListener(type, event => {
+    event.preventDefault();
+    els.imageDrop.classList.remove("active");
+  });
+});
+els.imageDrop.addEventListener("drop", event => {
+  uploadImageFiles(event.dataTransfer?.files).catch(error => {
+    setStatus(error.message);
+    setImageStatus(error.message);
+  });
+});
 els.toggleBibtexBtn.addEventListener("click", () => {
   els.bibtexPanel.hidden = !els.bibtexPanel.hidden;
   if (!els.bibtexPanel.hidden) {
@@ -2269,6 +2915,66 @@ def unique_slug(title: str, notes: list[dict], current_id: str | None = None) ->
         slug = f"{base}-{counter}"
         counter += 1
     return slug
+
+
+def image_extension_from_content_type(content_type: str) -> str:
+    content_type = content_type.split(";", 1)[0].strip().lower()
+    for ext, mime_type in IMAGE_MIME_TYPES.items():
+        if content_type == mime_type:
+            return ext
+    return ""
+
+
+def sanitize_asset_filename(filename: object, content_type: object = "") -> str:
+    original = Path(str(filename or "image")).name
+    suffix = Path(original).suffix.lower()
+    if suffix not in IMAGE_EXTENSIONS:
+        suffix = image_extension_from_content_type(str(content_type or ""))
+    if suffix not in IMAGE_EXTENSIONS:
+        raise ValueError("Unsupported image type.")
+    stem = slugify(Path(original).stem or "image")
+    return f"{stem}{suffix}"
+
+
+def unique_asset_path(asset_dir: Path, filename: str) -> Path:
+    base = Path(filename).stem
+    suffix = Path(filename).suffix
+    candidate = asset_dir / filename
+    counter = 2
+    while candidate.exists():
+        candidate = asset_dir / f"{base}-{counter}{suffix}"
+        counter += 1
+    return candidate
+
+
+def save_image_asset(payload: dict) -> dict:
+    raw_slug = str(payload.get("slug") or "").strip()
+    if not raw_slug:
+        raise ValueError("Save the note before adding an image.")
+    slug = slugify(raw_slug)
+    data_url = str(payload.get("dataUrl") or "")
+    if "," in data_url:
+        _, encoded = data_url.split(",", 1)
+    else:
+        encoded = data_url
+    raw = base64.b64decode(encoded, validate=True)
+    if not raw:
+        raise ValueError("Image is empty.")
+    if len(raw) > MAX_IMAGE_BYTES:
+        raise ValueError("Image is too large.")
+    filename = sanitize_asset_filename(payload.get("filename"), payload.get("contentType"))
+    if Path(filename).suffix.lower() == ".svg":
+        svg_preview = raw[:4096].decode("utf-8", "ignore").lower()
+        if "<script" in svg_preview:
+            raise ValueError("SVG images with script tags are not supported.")
+    asset_dir = ASSETS_DIR / slug
+    asset_dir.mkdir(parents=True, exist_ok=True)
+    target = unique_asset_path(asset_dir, filename)
+    target.write_bytes(raw)
+    return {
+        "filename": target.name,
+        "src": f"assets/{slug}/{target.name}",
+    }
 
 
 def normalize_reference_key(value: object) -> str:
@@ -2417,12 +3123,92 @@ def render_inline(text: str, citation_context: dict | None = None) -> str:
     return rendered
 
 
+def parse_image_line(line: str) -> tuple[str, str, str] | None:
+    match = re.match(r'^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)\s*$', line.strip())
+    if not match:
+        return None
+    return match.group(1).strip(), match.group(2).strip(), (match.group(3) or "").strip()
+
+
+def normalize_image_src(src: str, image_base: str = "") -> str | None:
+    src = src.strip()
+    if src.startswith(("http://", "https://")):
+        return src
+    if not src or src.startswith(("data:", "javascript:", "//")) or "\\" in src:
+        return None
+    pure_path = src.split("?", 1)[0].split("#", 1)[0]
+    if Path(pure_path).suffix.lower() not in IMAGE_EXTENSIONS:
+        return None
+    if any(part in {"", ".", ".."} for part in Path(pure_path).parts):
+        return None
+    if src.startswith("/"):
+        return src
+    return f"{image_base}{src}" if image_base else src
+
+
+def render_image(alt: str, src: str, title: str, image_base: str = "") -> str:
+    normalized_src = normalize_image_src(src, image_base)
+    if not normalized_src:
+        return f"<p>{render_inline(f'![{alt}]({src})')}</p>"
+    caption = title or alt
+    caption_html = f"\n<figcaption>{render_inline(caption)}</figcaption>" if caption else ""
+    return f"""<figure class="note-figure">
+<img alt="{escape(alt)}" src="{escape(normalized_src)}"/>{caption_html}
+</figure>"""
+
+
+def parse_math_environment_start(line: str) -> tuple[str, str] | None:
+    match = re.match(r"^:::\s*([A-Za-z]+)(?:\s+\[([^\]]+)\])?\s*$", line.strip())
+    if not match:
+        return None
+    kind = match.group(1).lower()
+    if kind not in MATH_ENVIRONMENTS:
+        return None
+    return kind, (match.group(2) or "").strip()
+
+
+def render_math_environment(
+    kind: str,
+    title: str,
+    content: str,
+    citation_context: dict | None,
+    env_counts: dict[str, int],
+    image_base: str = "",
+) -> str:
+    label = MATH_ENVIRONMENTS[kind]
+    if kind != "proof":
+        env_counts[kind] = env_counts.get(kind, 0) + 1
+        label = f"{label} {env_counts[kind]}"
+    title_html = f' <span class="math-env-title">({render_inline(title, citation_context)})</span>' if title else ""
+    body = render_markdown(content, citation_context, env_counts, image_base)
+    if kind == "proof":
+        body = append_qed_symbol(body)
+    return f"""
+<div class="math-env math-env-{kind}">
+<p class="math-env-heading"><span class="math-env-label">{escape(label)}.</span>{title_html}</p>
+<div class="math-env-body">
+{body}
+</div>
+</div>
+""".strip()
+
+
+def append_qed_symbol(body: str) -> str:
+    qed = '<span aria-hidden="true" class="qed-symbol">&#9633;</span>'
+    final_paragraph = re.search(r"</p>\s*$", body)
+    if final_paragraph:
+        return f"{body[:final_paragraph.start()]}{qed}{body[final_paragraph.start():]}"
+    return f'{body}\n<p class="qed-line">{qed}</p>'
+
+
 def is_block_start(line: str) -> bool:
     stripped = line.strip()
     return bool(
         not stripped
         or stripped == "$$"
         or stripped.startswith("```")
+        or parse_image_line(line)
+        or parse_math_environment_start(line)
         or re.match(r"#{1,3}\s+", line)
         or re.match(r"\s*[-*]\s+", line)
         or re.match(r"\s*\d+\.\s+", line)
@@ -2430,9 +3216,15 @@ def is_block_start(line: str) -> bool:
     )
 
 
-def render_markdown(markdown: str, citation_context: dict | None = None) -> str:
+def render_markdown(
+    markdown: str,
+    citation_context: dict | None = None,
+    env_counts: dict[str, int] | None = None,
+    image_base: str = "",
+) -> str:
     lines = markdown.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     output: list[str] = []
+    env_counts = env_counts if env_counts is not None else {}
     i = 0
 
     while i < len(lines):
@@ -2452,6 +3244,34 @@ def render_markdown(markdown: str, citation_context: dict | None = None) -> str:
             if i < len(lines):
                 i += 1
             output.append(f"<pre><code>{escape(chr(10).join(code_lines))}</code></pre>")
+            continue
+
+        image = parse_image_line(line)
+        if image:
+            output.append(render_image(image[0], image[1], image[2], image_base))
+            i += 1
+            continue
+
+        math_environment = parse_math_environment_start(line)
+        if math_environment:
+            kind, title = math_environment
+            i += 1
+            block_lines: list[str] = []
+            while i < len(lines) and lines[i].strip() != ":::":
+                block_lines.append(lines[i])
+                i += 1
+            if i < len(lines):
+                i += 1
+            output.append(
+                render_math_environment(
+                    kind,
+                    title,
+                    "\n".join(block_lines).strip(),
+                    citation_context,
+                    env_counts,
+                    image_base,
+                )
+            )
             continue
 
         if stripped == "$$":
@@ -2563,12 +3383,12 @@ def render_references_section(citation_context: dict) -> str:
 """.strip()
 
 
-def render_note_article(note: dict) -> str:
+def render_note_article(note: dict, image_base: str = "") -> str:
     title = escape(note.get("title") or "Untitled note")
     note_date = escape(note.get("date") or "")
     description = escape(note.get("description") or "")
     citation_context = make_citation_context(note.get("references") or [])
-    body = render_markdown(note.get("body") or "", citation_context)
+    body = render_markdown(note.get("body") or "", citation_context, image_base=image_base)
     references = render_references_section(citation_context)
     description_html = f'<p class="note-description">{description}</p>' if description else ""
     date_html = f'<span class="note-date">{note_date}</span>' if note_date else ""
@@ -2628,30 +3448,34 @@ def render_notes_index(notes: list[dict]) -> str:
             meta_html = f'<span class="note-meta">{meta}</span>' if meta else ""
             entries.append(
                 f"""<li>
+<div class="note-entry">
 <a class="note-title" href="{slug}.html">{title}</a>
 {meta_html}
+</div>
 </li>"""
             )
         list_html = "\n".join(entries)
     else:
-        list_html = '<li><p class="empty-note">No notes yet.</p></li>'
+        list_html = '<li class="empty-note-item"><p class="empty-note">No notes yet.</p></li>'
 
     lede_html = f'\n<p class="lede">{escape(DEFAULT_LEDE)}</p>' if DEFAULT_LEDE else ""
 
     body = f"""
-<div class="page">
+<div class="page notes-page">
 <nav aria-label="Site links" class="topline">
 <a href="../index.html">Home</a>
 </nav>
-<header>
+<header class="notes-hero">
 <h1>Notes</h1>{lede_html}
 </header>
 <main>
-<section>
+<section class="notes-index-section">
 <h2>Index</h2>
+<div class="notes-index">
 <ul class="note-list">
 {list_html}
 </ul>
+</div>
 </section>
 </main>
 </div>
@@ -2693,13 +3517,32 @@ def remove_stale_note_pages(valid_slugs: set[str]) -> None:
             path.unlink()
 
 
+def remove_stale_asset_dirs(valid_slugs: set[str]) -> None:
+    if not ASSETS_DIR.exists():
+        return
+    for path in ASSETS_DIR.iterdir():
+        if path.name == ".DS_Store":
+            path.unlink()
+            continue
+        if not path.is_dir():
+            continue
+        if path.name not in valid_slugs:
+            shutil.rmtree(path)
+    try:
+        ASSETS_DIR.rmdir()
+    except OSError:
+        pass
+
+
 def render_site() -> None:
     data = load_data()
     notes = data.get("notes", [])
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
     published_notes = [note for note in notes if note.get("published", True) is not False]
     valid_slugs = {note.get("slug") for note in published_notes if note.get("slug")}
+    asset_slugs = {note.get("slug") for note in notes if note.get("slug")}
     remove_stale_note_pages(set(valid_slugs))
+    remove_stale_asset_dirs(set(asset_slugs))
     (NOTES_DIR / "index.html").write_text(render_notes_index(notes), encoding="utf-8")
     for note in published_notes:
         slug = note.get("slug")
@@ -2761,7 +3604,18 @@ class NotesHandler(BaseHTTPRequestHandler):
             if path == "/api/render":
                 note = normalize_note(payload, [])
                 note["slug"] = payload.get("slug") or ""
-                self.send_json({"html": render_note_article(note)})
+                self.send_json({"html": render_note_article(note, image_base="/site/notes/")})
+                return
+            if path == "/api/image":
+                data = load_data()
+                note_id = str(payload.get("id") or "")
+                note_slug = str(payload.get("slug") or "")
+                if not any(
+                    note.get("id") == note_id and note.get("slug") == note_slug
+                    for note in data.get("notes", [])
+                ):
+                    raise ValueError("Save the note before adding an image.")
+                self.send_json(save_image_asset(payload))
                 return
             if path == "/api/save":
                 data = load_data()
@@ -2826,6 +3680,8 @@ class NotesHandler(BaseHTTPRequestHandler):
             return parts[0] in PUBLIC_ROOT_FILES
         if len(parts) == 2 and parts[0] == "notes":
             return parts[1].endswith(".html")
+        if len(parts) >= 3 and parts[0] == "notes" and parts[1] == "assets":
+            return Path(parts[-1]).suffix.lower() in IMAGE_EXTENSIONS
         return False
 
 
