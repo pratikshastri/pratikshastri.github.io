@@ -1,4 +1,7 @@
 
 .DS_Store
 notes-data/editor.log
+notes-data/editor.port
+notes-data/notes.json
+notes-data/notes.json.tmp
 scripts/__pycache__/

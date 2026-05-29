@@ -23,9 +23,15 @@ from urllib.parse import unquote, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "notes-data"
 DATA_FILE = DATA_DIR / "notes.json"
+PORT_FILE = DATA_DIR / "editor.port"
 NOTES_DIR = ROOT / "notes"
 GENERATED_MARKER = "<!-- generated-by-notes-editor -->"
 DEFAULT_LEDE = "My notes, thoughts, and rambles should appear here."
+PUBLIC_ROOT_FILES = {
+    "index.html",
+    "CV.pdf",
+    "788f16b6-cb0b-4319-9256-96ad4916cb15.JPG",
+}
 
 
 SITE_CSS = r"""
@@ -1157,6 +1163,10 @@ async function updateVisibility(published) {
     setStatus("Save the note before changing visibility.");
     return;
   }
+  if (state.dirty) {
+    setStatus("Save or discard unsaved edits before changing visibility.");
+    return;
+  }
   const note = collectNote();
   note.published = published;
   setStatus(published ? "Publishing..." : "Hiding...");
@@ -1707,6 +1717,13 @@ class NotesHandler(BaseHTTPRequestHandler):
 
     def serve_site_file(self, relative_url_path: str) -> None:
         relative_path = Path(unquote(relative_url_path.lstrip("/")))
+        if relative_path == Path("."):
+            relative_path = Path("index.html")
+        if relative_path == Path("notes"):
+            relative_path = Path("notes/index.html")
+        if not self.is_public_site_path(relative_path):
+            self.send_text(403, "Forbidden")
+            return
         target = (ROOT / relative_path).resolve()
         try:
             target.relative_to(ROOT)
@@ -1726,6 +1743,15 @@ class NotesHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    @staticmethod
+    def is_public_site_path(relative_path: Path) -> bool:
+        parts = relative_path.parts
+        if len(parts) == 1:
+            return parts[0] in PUBLIC_ROOT_FILES
+        if len(parts) == 2 and parts[0] == "notes":
+            return parts[1].endswith(".html")
+        return False
+
 
 def make_server(preferred_port: int) -> ThreadingHTTPServer:
     for port in range(preferred_port, preferred_port + 50):
@@ -1741,6 +1767,8 @@ def run_server(port: int, open_browser: bool = True) -> None:
     server = make_server(port)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    PORT_FILE.write_text(str(actual_port), encoding="utf-8")
     print(f"Notes editor running at {url}")
     print("Use Quit editor in the browser when you are done.")
     if open_browser:
@@ -1751,6 +1779,10 @@ def run_server(port: int, open_browser: bool = True) -> None:
         print("\nStopping notes editor.")
     finally:
         server.server_close()
+        try:
+            PORT_FILE.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def main() -> None:
