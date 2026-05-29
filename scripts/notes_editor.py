@@ -26,7 +26,7 @@ DATA_FILE = DATA_DIR / "notes.json"
 PORT_FILE = DATA_DIR / "editor.port"
 NOTES_DIR = ROOT / "notes"
 GENERATED_MARKER = "<!-- generated-by-notes-editor -->"
-DEFAULT_LEDE = "My notes, thoughts, and rambles should appear here."
+DEFAULT_LEDE = ""
 PUBLIC_ROOT_FILES = {
     "index.html",
     "CV.pdf",
@@ -1561,14 +1561,15 @@ def render_notes_index(notes: list[dict]) -> str:
     else:
         list_html = '<li><p class="empty-note">No notes yet.</p></li>'
 
+    lede_html = f'\n<p class="lede">{escape(DEFAULT_LEDE)}</p>' if DEFAULT_LEDE else ""
+
     body = f"""
 <div class="page">
 <nav aria-label="Site links" class="topline">
 <a href="../index.html">Home</a>
 </nav>
 <header>
-<h1>Notes</h1>
-<p class="lede">{escape(DEFAULT_LEDE)}</p>
+<h1>Notes</h1>{lede_html}
 </header>
 <main>
 <section>
