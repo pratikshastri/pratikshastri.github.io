@@ -310,6 +310,61 @@ SITE_CSS = r"""
       color: var(--muted);
     }
 
+    .citation {
+      color: var(--accent);
+      font-size: 0.9em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .citation a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .citation a:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+    }
+
+    .citation-missing {
+      color: #9a3d37;
+      font-size: 0.9em;
+      white-space: nowrap;
+    }
+
+    .references-section {
+      display: block;
+      margin-top: 3.25rem;
+      padding-top: 1.6rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .references-section h2 {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+
+    .references-list {
+      margin: 0;
+      padding-left: 1.3rem;
+    }
+
+    .references-list li {
+      padding-left: 0.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .reference-title {
+      font-style: italic;
+    }
+
+    .reference-link {
+      color: var(--muted);
+    }
+
     @media (max-width: 768px) {
       body {
         font-size: 17px;
@@ -591,7 +646,7 @@ EDITOR_HTML = r"""
 
     .editor-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
       gap: 2rem;
       align-items: start;
     }
@@ -640,6 +695,75 @@ EDITOR_HTML = r"""
       line-height: 1.55;
     }
 
+    .body-field {
+      position: relative;
+      margin-bottom: 1.4rem;
+    }
+
+    .body-field label {
+      margin-bottom: 0;
+    }
+
+    .citation-suggest {
+      position: absolute;
+      left: 0;
+      right: auto;
+      top: 4.5rem;
+      z-index: 20;
+      display: none;
+      width: min(34rem, 100%);
+      max-height: 15rem;
+      overflow-y: auto;
+      padding: 0.2rem 0;
+      border-top: 1px solid var(--accent);
+      border-bottom: 1px solid var(--rule);
+      background: rgba(244, 247, 244, 0.98);
+      box-shadow: 0 1.6rem 2.6rem rgba(25, 27, 24, 0.12);
+    }
+
+    .citation-suggest.active {
+      display: block;
+    }
+
+    .citation-option {
+      display: grid;
+      gap: 0.15rem;
+      width: 100%;
+      padding: 0.7rem 0.2rem;
+      border-bottom: 1px solid var(--rule);
+      text-align: left;
+    }
+
+    .citation-option:last-child {
+      border-bottom: 0;
+    }
+
+    .citation-option.active,
+    .citation-option:hover {
+      color: var(--text);
+      background: rgba(81, 119, 131, 0.08);
+    }
+
+    .citation-option-key {
+      color: var(--accent);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .citation-option-meta {
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.35;
+    }
+
+    .citation-empty {
+      margin: 0;
+      padding: 0.8rem 0.2rem;
+      color: var(--muted);
+      font-size: 0.96rem;
+      font-style: italic;
+    }
+
     .field-note {
       margin: -0.7rem 0 1.4rem;
       color: var(--muted);
@@ -678,6 +802,105 @@ EDITOR_HTML = r"""
 
     .side-fields {
       padding-top: 0.4rem;
+    }
+
+    .references-editor {
+      margin-top: 1.8rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .references-editor h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .reference-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .reference-tools,
+    .reference-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .bibtex-import {
+      margin: 0.8rem 0 1.2rem;
+      padding: 0.85rem 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .bibtex-import[hidden] {
+      display: none;
+    }
+
+    #bibtexInput {
+      min-height: 10rem;
+      font-size: 0.98rem;
+    }
+
+    .reference-status,
+    .reference-warnings {
+      margin: 0.75rem 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.4;
+    }
+
+    .reference-warnings {
+      margin-bottom: 0.8rem;
+      color: var(--danger);
+    }
+
+    .reference-list-editor {
+      display: grid;
+      gap: 1.25rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reference-item-editor {
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .reference-fields {
+      display: grid;
+      grid-template-columns: minmax(8rem, 0.7fr) minmax(0, 1.3fr);
+      gap: 0.7rem 1rem;
+    }
+
+    .reference-fields label {
+      margin-bottom: 0.35rem;
+    }
+
+    .reference-fields textarea {
+      min-height: 4.7rem;
+      font-size: 0.98rem;
+    }
+
+    .reference-summary {
+      margin: 0.35rem 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.4;
+    }
+
+    .empty-references {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      font-style: italic;
     }
 
     .panel {
@@ -788,6 +1011,61 @@ EDITOR_HTML = r"""
       color: var(--muted);
     }
 
+    .citation {
+      color: var(--accent);
+      font-size: 0.9em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .citation a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .citation a:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+    }
+
+    .citation-missing {
+      color: var(--danger);
+      font-size: 0.9em;
+      white-space: nowrap;
+    }
+
+    .references-section {
+      display: block;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .references-section h2 {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+
+    .references-list {
+      margin: 0;
+      padding-left: 1.3rem;
+    }
+
+    .references-list li {
+      padding-left: 0.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .reference-title {
+      font-style: italic;
+    }
+
+    .reference-link {
+      color: var(--muted);
+    }
+
     .guide {
       max-width: 760px;
     }
@@ -816,6 +1094,10 @@ EDITOR_HTML = r"""
       }
 
       .editor-grid {
+        display: block;
+      }
+
+      .reference-fields {
         display: block;
       }
 
@@ -861,10 +1143,35 @@ EDITOR_HTML = r"""
 <span class="label-text">Title</span>
 <input autocomplete="off" id="title" placeholder="A note on..." type="text"/>
 </label>
-<label>
+<div class="body-field">
+<label for="body">
 <span class="label-text">Body</span>
-<textarea id="body" spellcheck="true" placeholder="Write Markdown and TeX here. Switch to Review to see the latest rendered version."></textarea>
 </label>
+<textarea id="body" spellcheck="true" placeholder="Write Markdown and TeX here. Switch to Review to see the latest rendered version."></textarea>
+<div aria-label="Citation suggestions" class="citation-suggest" id="citationSuggest" role="listbox"></div>
+</div>
+<section class="references-editor" aria-labelledby="referencesHeading">
+<div class="reference-head">
+<h2 id="referencesHeading">References</h2>
+<div class="reference-tools">
+<button class="text-button" id="toggleBibtexBtn" type="button">Paste BibTeX</button>
+<button class="text-button" id="addReferenceBtn" type="button">Add manually</button>
+</div>
+</div>
+<div class="bibtex-import" id="bibtexPanel" hidden>
+<label>
+<span class="label-text">BibTeX</span>
+<textarea id="bibtexInput" spellcheck="false" placeholder="@article{nisan1991,&#10;  author = {Nisan, Noam},&#10;  title = {Lower bounds for non-commutative computation},&#10;  year = {1991}&#10;}"></textarea>
+</label>
+<div class="reference-actions">
+<button class="text-button" id="importBibtexBtn" type="button">Add from BibTeX</button>
+<button class="text-button" id="clearBibtexBtn" type="button">Clear</button>
+</div>
+<p class="reference-status" id="bibtexStatus">Paste one entry or many. I will keep the keys and fill the reference list.</p>
+</div>
+<p class="reference-warnings" id="referenceWarnings"></p>
+<ul class="reference-list-editor" id="referenceListEditor"></ul>
+</section>
 </div>
 <div class="side-fields">
 <label>
@@ -926,6 +1233,19 @@ EDITOR_HTML = r"""
 <h2>Links</h2>
 <pre><code>[arXiv](https://arxiv.org/)</code></pre>
 
+<h2>Citations</h2>
+<pre><code>Type [@ and choose a saved reference from the dropdown.
+
+Basic citation:
+[@nisan1991]
+
+With a locator:
+[@nisan1991, Theorem 2.1]
+
+Several references:
+[@nisan1991; @raz2013]</code></pre>
+<p>Use Paste BibTeX in the References section to add one entry or many entries at once. The dropdown filters by citation-key prefix as you type.</p>
+
 <h2>Mathematics</h2>
 <pre><code>Inline math uses dollar signs: $\Omega(nd)$.
 
@@ -961,9 +1281,18 @@ const state = {
   currentId: null,
   currentSlug: "",
   currentPublished: true,
+  references: [],
   dirty: false,
   mode: "write",
-  previewTimer: null
+  previewTimer: null,
+  refCounter: 0,
+  citation: {
+    open: false,
+    start: 0,
+    prefix: "",
+    selected: 0,
+    suggestions: []
+  }
 };
 
 const els = {
@@ -972,6 +1301,16 @@ const els = {
   date: document.getElementById("date"),
   description: document.getElementById("description"),
   body: document.getElementById("body"),
+  citationSuggest: document.getElementById("citationSuggest"),
+  toggleBibtexBtn: document.getElementById("toggleBibtexBtn"),
+  bibtexPanel: document.getElementById("bibtexPanel"),
+  bibtexInput: document.getElementById("bibtexInput"),
+  bibtexStatus: document.getElementById("bibtexStatus"),
+  importBibtexBtn: document.getElementById("importBibtexBtn"),
+  clearBibtexBtn: document.getElementById("clearBibtexBtn"),
+  addReferenceBtn: document.getElementById("addReferenceBtn"),
+  referenceWarnings: document.getElementById("referenceWarnings"),
+  referenceListEditor: document.getElementById("referenceListEditor"),
   slugNote: document.getElementById("slugNote"),
   visibilityNote: document.getElementById("visibilityNote"),
   visibilityBtn: document.getElementById("visibilityBtn"),
@@ -1003,6 +1342,545 @@ async function api(path, options = {}) {
   return response.json();
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function normalizeReferenceKey(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^@+/, "")
+    .replace(/[^A-Za-z0-9:_.-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function nextReferenceId() {
+  state.refCounter += 1;
+  return `ref-${Date.now()}-${state.refCounter}`;
+}
+
+function normalizeReferenceForEditor(reference = {}) {
+  return {
+    localId: reference.localId || nextReferenceId(),
+    key: normalizeReferenceKey(reference.key),
+    author: String(reference.author || "").trim(),
+    title: String(reference.title || "").trim(),
+    year: String(reference.year || "").trim(),
+    venue: String(reference.venue || "").trim(),
+    doi: String(reference.doi || "").trim(),
+    url: String(reference.url || "").trim(),
+    rawBibtex: String(reference.rawBibtex || "").trim()
+  };
+}
+
+function referenceKeyBase(reference) {
+  const authorPart = (reference.author || "ref").split(/,|;|\band\b/i)[0].trim().split(/\s+/).pop() || "ref";
+  const yearPart = (reference.year || "").match(/\d{4}/);
+  return normalizeReferenceKey(`${authorPart}${yearPart ? yearPart[0] : ""}`.toLowerCase()) || "ref";
+}
+
+function uniqueReferenceKey(baseKey, reserved = new Set()) {
+  const base = normalizeReferenceKey(baseKey) || "ref";
+  let candidate = base;
+  let counter = 2;
+  while (reserved.has(candidate.toLowerCase())) {
+    candidate = `${base}${counter}`;
+    counter += 1;
+  }
+  reserved.add(candidate.toLowerCase());
+  return candidate;
+}
+
+function collectReferences() {
+  const reserved = new Set();
+  return state.references
+    .map(reference => {
+      const clean = normalizeReferenceForEditor(reference);
+      const hasContent = ["author", "title", "year", "venue", "doi", "url", "rawBibtex"].some(field => clean[field]);
+      if (!clean.key && hasContent) {
+        clean.key = uniqueReferenceKey(referenceKeyBase(clean), reserved);
+      } else if (clean.key) {
+        clean.key = uniqueReferenceKey(clean.key, reserved);
+      }
+      reference.key = clean.key;
+      return clean;
+    })
+    .filter(reference => reference.key || reference.author || reference.title || reference.year || reference.venue || reference.doi || reference.url)
+    .map(({ localId, ...reference }) => reference);
+}
+
+function referenceSubtitle(reference) {
+  return [reference.author, reference.title, reference.year].filter(Boolean).join(", ") || "Blank reference";
+}
+
+function citationKeysInBody() {
+  const keys = [];
+  const seen = new Set();
+  const pattern = /(?:\[@|;\s*@)([A-Za-z0-9:_.-]+)/g;
+  let match;
+  while ((match = pattern.exec(els.body.value)) !== null) {
+    const key = match[1];
+    if (!seen.has(key)) {
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+function updateReferenceWarnings() {
+  const references = collectReferences();
+  const referenceKeys = references.map(reference => reference.key).filter(Boolean);
+  const keySet = new Set(referenceKeys);
+  const cited = citationKeysInBody();
+  const missing = cited.filter(key => !keySet.has(key));
+  const unused = referenceKeys.filter(key => !cited.includes(key));
+  const messages = [];
+  if (missing.length) {
+    messages.push(`Missing reference: ${missing.map(key => `@${key}`).join(", ")}.`);
+  }
+  if (unused.length) {
+    messages.push(`Unused: ${unused.map(key => `@${key}`).join(", ")}.`);
+  }
+  els.referenceWarnings.textContent = messages.join(" ");
+}
+
+function renderReferences() {
+  els.referenceListEditor.innerHTML = "";
+  if (!state.references.length) {
+    const empty = document.createElement("li");
+    empty.className = "empty-references";
+    empty.textContent = "No references yet. Paste BibTeX or add one manually.";
+    els.referenceListEditor.appendChild(empty);
+    updateReferenceWarnings();
+    refreshCitationSuggestions();
+    return;
+  }
+
+  for (const reference of state.references) {
+    const item = document.createElement("li");
+    item.className = "reference-item-editor";
+    item.dataset.refId = reference.localId;
+    item.innerHTML = `
+<p class="reference-summary">${escapeHtml(reference.key ? `@${reference.key}` : "No key yet")} · ${escapeHtml(referenceSubtitle(reference))}</p>
+<div class="reference-fields">
+<label><span class="label-text">Key</span><input autocomplete="off" data-ref-field="key" value="${escapeHtml(reference.key)}" placeholder="nisan1991"/></label>
+<label><span class="label-text">Author</span><input autocomplete="off" data-ref-field="author" value="${escapeHtml(reference.author)}" placeholder="Noam Nisan"/></label>
+<label><span class="label-text">Year</span><input autocomplete="off" data-ref-field="year" value="${escapeHtml(reference.year)}" placeholder="1991"/></label>
+<label><span class="label-text">Venue</span><input autocomplete="off" data-ref-field="venue" value="${escapeHtml(reference.venue)}" placeholder="STOC, journal, preprint"/></label>
+<label><span class="label-text">Title</span><textarea data-ref-field="title" placeholder="Paper title">${escapeHtml(reference.title)}</textarea></label>
+<label><span class="label-text">DOI or URL</span><textarea data-ref-field="url" placeholder="https://...">${escapeHtml(reference.url || reference.doi)}</textarea></label>
+</div>
+<div class="reference-actions">
+<button class="text-button" data-ref-action="insert" type="button">Insert citation</button>
+<button class="text-button danger" data-ref-action="remove" type="button">Remove</button>
+</div>`;
+    item.querySelectorAll("[data-ref-field]").forEach(input => {
+      input.addEventListener("input", () => {
+        const field = input.dataset.refField;
+        if (field === "url") {
+          const value = input.value.trim();
+          reference.url = value.startsWith("10.") ? "" : value;
+          reference.doi = value.startsWith("10.") ? value : "";
+        } else if (field === "key") {
+          reference.key = normalizeReferenceKey(input.value);
+        } else {
+          reference[field] = input.value;
+        }
+        updateReferenceWarnings();
+        refreshCitationSuggestions();
+        markDirty();
+      });
+      input.addEventListener("blur", () => {
+        if (input.dataset.refField === "key") {
+          input.value = normalizeReferenceKey(input.value);
+          reference.key = input.value;
+          updateReferenceWarnings();
+          refreshCitationSuggestions();
+        }
+      });
+    });
+    item.querySelector('[data-ref-action="insert"]').addEventListener("click", () => insertReferenceCitation(reference));
+    item.querySelector('[data-ref-action="remove"]').addEventListener("click", () => {
+      state.references = state.references.filter(item => item.localId !== reference.localId);
+      renderReferences();
+      markDirty();
+    });
+    els.referenceListEditor.appendChild(item);
+  }
+  updateReferenceWarnings();
+  refreshCitationSuggestions();
+}
+
+function addBlankReference() {
+  state.references.push(normalizeReferenceForEditor({}));
+  renderReferences();
+  markDirty();
+  const inputs = els.referenceListEditor.querySelectorAll('[data-ref-field="key"]');
+  if (inputs.length) {
+    inputs[inputs.length - 1].focus();
+  }
+}
+
+function insertTextAtBody(text, putCursorBeforeLastChar = false) {
+  const start = els.body.selectionStart;
+  const end = els.body.selectionEnd;
+  const before = els.body.value.slice(0, start);
+  const after = els.body.value.slice(end);
+  els.body.value = before + text + after;
+  const cursor = before.length + text.length - (putCursorBeforeLastChar ? 1 : 0);
+  els.body.focus();
+  els.body.setSelectionRange(cursor, cursor);
+  markDirty();
+}
+
+function insertReferenceCitation(reference) {
+  const key = normalizeReferenceKey(reference.key);
+  if (!key) {
+    setStatus("Give the reference a key first.");
+    return;
+  }
+  insertTextAtBody(`[@${key}]`);
+  setStatus(`Inserted @${key}.`);
+}
+
+function parseBibtex(text) {
+  const entries = [];
+  let index = 0;
+  while (index < text.length) {
+    const at = text.indexOf("@", index);
+    if (at === -1) break;
+    const typeMatch = text.slice(at + 1).match(/^\s*([A-Za-z]+)\s*([{(])/);
+    if (!typeMatch) {
+      index = at + 1;
+      continue;
+    }
+    const type = typeMatch[1].toLowerCase();
+    const openerIndex = at + 1 + typeMatch[0].lastIndexOf(typeMatch[2]);
+    const closerIndex = findBibtexClose(text, openerIndex, typeMatch[2]);
+    if (closerIndex === -1) {
+      break;
+    }
+    if (["comment", "preamble", "string"].includes(type)) {
+      index = closerIndex + 1;
+      continue;
+    }
+    const content = text.slice(openerIndex + 1, closerIndex);
+    const comma = findTopLevelComma(content);
+    if (comma !== -1) {
+      entries.push({
+        type,
+        key: content.slice(0, comma).trim(),
+        fields: parseBibtexFields(content.slice(comma + 1)),
+        rawBibtex: text.slice(at, closerIndex + 1).trim()
+      });
+    }
+    index = closerIndex + 1;
+  }
+  return entries;
+}
+
+function findBibtexClose(text, openerIndex, opener) {
+  const closer = opener === "{" ? "}" : ")";
+  let depth = 0;
+  let inQuote = false;
+  let escaped = false;
+  for (let i = openerIndex; i < text.length; i += 1) {
+    const char = text[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inQuote = !inQuote;
+      continue;
+    }
+    if (inQuote) continue;
+    if (char === opener) depth += 1;
+    if (char === closer) {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function findTopLevelComma(text) {
+  let depth = 0;
+  let inQuote = false;
+  let escaped = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inQuote = !inQuote;
+      continue;
+    }
+    if (inQuote) continue;
+    if (char === "{" || char === "(") depth += 1;
+    if (char === "}" || char === ")") depth -= 1;
+    if (char === "," && depth === 0) return i;
+  }
+  return -1;
+}
+
+function parseBibtexFields(text) {
+  const fields = {};
+  let index = 0;
+  while (index < text.length) {
+    while (index < text.length && /[\s,]/.test(text[index])) index += 1;
+    const nameMatch = text.slice(index).match(/^([A-Za-z][A-Za-z0-9_-]*)\s*=/);
+    if (!nameMatch) break;
+    const name = nameMatch[1].toLowerCase();
+    index += nameMatch[0].length;
+    const parsed = readBibtexValue(text, index);
+    fields[name] = cleanBibtexValue(parsed.value);
+    index = parsed.next;
+  }
+  return fields;
+}
+
+function readBibtexValue(text, index) {
+  while (index < text.length && /\s/.test(text[index])) index += 1;
+  if (text[index] === "{" || text[index] === "(") {
+    const close = findBibtexClose(text, index, text[index]);
+    return {
+      value: close === -1 ? text.slice(index + 1) : text.slice(index + 1, close),
+      next: close === -1 ? text.length : close + 1
+    };
+  }
+  if (text[index] === '"') {
+    let i = index + 1;
+    let escaped = false;
+    while (i < text.length) {
+      if (escaped) {
+        escaped = false;
+      } else if (text[i] === "\\") {
+        escaped = true;
+      } else if (text[i] === '"') {
+        break;
+      }
+      i += 1;
+    }
+    return { value: text.slice(index + 1, i), next: Math.min(i + 1, text.length) };
+  }
+  let i = index;
+  while (i < text.length && text[i] !== ",") i += 1;
+  return { value: text.slice(index, i), next: i };
+}
+
+function cleanBibtexValue(value) {
+  return String(value || "")
+    .replace(/[{}]/g, "")
+    .replace(/\\&/g, "&")
+    .replace(/\\_/g, "_")
+    .replace(/\\-/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function bibtexField(fields, names) {
+  for (const name of names) {
+    if (fields[name]) return fields[name];
+  }
+  return "";
+}
+
+function formatBibtexAuthors(value) {
+  return String(value || "")
+    .split(/\s+and\s+/i)
+    .map(author => {
+      const parts = author.split(",").map(part => part.trim()).filter(Boolean);
+      return parts.length >= 2 ? `${parts.slice(1).join(" ")} ${parts[0]}` : author.trim();
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function importBibtexEntries() {
+  const entries = parseBibtex(els.bibtexInput.value);
+  if (!entries.length) {
+    els.bibtexStatus.textContent = "I could not find a BibTeX entry. Paste an entry beginning with @article, @inproceedings, or similar.";
+    return;
+  }
+  const reserved = new Set(state.references.map(reference => normalizeReferenceKey(reference.key).toLowerCase()).filter(Boolean));
+  const imported = entries.map(entry => {
+    const fields = entry.fields;
+    const doi = bibtexField(fields, ["doi"]);
+    const url = bibtexField(fields, ["url", "eprint"]);
+    return normalizeReferenceForEditor({
+      key: uniqueReferenceKey(entry.key, reserved),
+      author: formatBibtexAuthors(bibtexField(fields, ["author", "editor"])),
+      title: bibtexField(fields, ["title"]),
+      year: bibtexField(fields, ["year", "date"]),
+      venue: bibtexField(fields, ["journal", "booktitle", "publisher", "school", "institution", "archiveprefix"]),
+      doi,
+      url,
+      rawBibtex: entry.rawBibtex
+    });
+  });
+  state.references.push(...imported);
+  renderReferences();
+  markDirty();
+  els.bibtexInput.value = "";
+  els.bibtexStatus.textContent = `Added ${imported.length} reference${imported.length === 1 ? "" : "s"}.`;
+}
+
+function textareaCaretPosition(textarea) {
+  const style = window.getComputedStyle(textarea);
+  const mirror = document.createElement("div");
+  const properties = [
+    "boxSizing", "width", "fontFamily", "fontSize", "fontWeight", "fontStyle",
+    "letterSpacing", "textTransform", "wordSpacing", "lineHeight", "textAlign",
+    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
+    "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"
+  ];
+  mirror.style.position = "absolute";
+  mirror.style.visibility = "hidden";
+  mirror.style.whiteSpace = "pre-wrap";
+  mirror.style.overflowWrap = "break-word";
+  mirror.style.top = "0";
+  mirror.style.left = "-9999px";
+  mirror.style.width = `${textarea.clientWidth}px`;
+  properties.forEach(property => {
+    mirror.style[property] = style[property];
+  });
+  mirror.textContent = textarea.value.slice(0, textarea.selectionStart);
+  const marker = document.createElement("span");
+  marker.textContent = "\u200b";
+  mirror.appendChild(marker);
+  document.body.appendChild(mirror);
+  const markerRect = marker.getBoundingClientRect();
+  const mirrorRect = mirror.getBoundingClientRect();
+  document.body.removeChild(mirror);
+  const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.4;
+  return {
+    left: markerRect.left - mirrorRect.left - textarea.scrollLeft,
+    top: markerRect.top - mirrorRect.top - textarea.scrollTop + lineHeight
+  };
+}
+
+function positionCitationSuggestions() {
+  if (!state.citation.open) return;
+  const field = els.body.closest(".body-field");
+  const fieldRect = field.getBoundingClientRect();
+  const textareaRect = els.body.getBoundingClientRect();
+  const caret = textareaCaretPosition(els.body);
+  const minWidth = Math.min(320, fieldRect.width);
+  const maxLeft = Math.max(0, fieldRect.width - minWidth);
+  const left = Math.min(Math.max(0, textareaRect.left - fieldRect.left + caret.left - 12), maxLeft);
+  const top = Math.min(
+    textareaRect.top - fieldRect.top + caret.top + 6,
+    textareaRect.top - fieldRect.top + els.body.clientHeight - 8
+  );
+  els.citationSuggest.style.left = `${left}px`;
+  els.citationSuggest.style.top = `${Math.max(3.8 * Number.parseFloat(getComputedStyle(document.body).fontSize), top)}px`;
+  els.citationSuggest.style.width = `min(34rem, ${Math.max(minWidth, fieldRect.width - left)}px)`;
+}
+
+function currentCitationTrigger() {
+  if (els.body.selectionStart !== els.body.selectionEnd) return null;
+  const cursor = els.body.selectionStart;
+  const before = els.body.value.slice(0, cursor);
+  const match = before.match(/(?:\[@|;\s*@)([A-Za-z0-9:_.-]*)$/);
+  if (!match) return null;
+  return {
+    prefix: match[1] || "",
+    start: cursor - (match[1] || "").length
+  };
+}
+
+function citationSuggestions(prefix) {
+  const lowerPrefix = prefix.toLowerCase();
+  return collectReferences()
+    .filter(reference => reference.key && reference.key.toLowerCase().startsWith(lowerPrefix))
+    .slice(0, 8);
+}
+
+function refreshCitationSuggestions() {
+  if (!state.citation.open) return;
+  const trigger = currentCitationTrigger();
+  if (!trigger) {
+    closeCitationSuggestions();
+    return;
+  }
+  openCitationSuggestions(trigger);
+}
+
+function openCitationSuggestions(trigger) {
+  state.citation.open = true;
+  state.citation.start = trigger.start;
+  state.citation.prefix = trigger.prefix;
+  state.citation.suggestions = citationSuggestions(trigger.prefix);
+  state.citation.selected = Math.min(state.citation.selected, Math.max(state.citation.suggestions.length - 1, 0));
+  renderCitationSuggestions();
+}
+
+function renderCitationSuggestions() {
+  els.citationSuggest.innerHTML = "";
+  els.citationSuggest.classList.add("active");
+  if (!state.citation.suggestions.length) {
+    const empty = document.createElement("p");
+    empty.className = "citation-empty";
+    empty.textContent = state.references.length ? "No matching references." : "No references yet.";
+    els.citationSuggest.appendChild(empty);
+    positionCitationSuggestions();
+    return;
+  }
+  state.citation.suggestions.forEach((reference, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "citation-option" + (index === state.citation.selected ? " active" : "");
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-selected", index === state.citation.selected ? "true" : "false");
+    button.innerHTML = `<span class="citation-option-key">@${escapeHtml(reference.key)}</span><span class="citation-option-meta">${escapeHtml(referenceSubtitle(reference))}</span>`;
+    button.addEventListener("mousedown", event => {
+      event.preventDefault();
+      insertCitationSuggestion(reference);
+    });
+    els.citationSuggest.appendChild(button);
+  });
+  positionCitationSuggestions();
+}
+
+function closeCitationSuggestions() {
+  state.citation.open = false;
+  state.citation.suggestions = [];
+  els.citationSuggest.classList.remove("active");
+  els.citationSuggest.innerHTML = "";
+}
+
+function insertCitationSuggestion(reference) {
+  const key = normalizeReferenceKey(reference.key);
+  if (!key) return;
+  const cursor = els.body.selectionStart;
+  const before = els.body.value.slice(0, state.citation.start);
+  const after = els.body.value.slice(cursor);
+  const close = after.startsWith("]") ? "" : "]";
+  els.body.value = before + key + close + after;
+  const nextCursor = before.length + key.length;
+  els.body.focus();
+  els.body.setSelectionRange(nextCursor, nextCursor);
+  closeCitationSuggestions();
+  markDirty();
+  setStatus(`Inserted @${key}.`);
+}
+
 function collectNote() {
   return {
     id: state.currentId,
@@ -1011,7 +1889,8 @@ function collectNote() {
     title: els.title.value.trim(),
     date: els.date.value,
     description: els.description.value.trim(),
-    body: els.body.value
+    body: els.body.value,
+    references: collectReferences()
   };
 }
 
@@ -1019,11 +1898,14 @@ function fillNote(note) {
   state.currentId = note.id || null;
   state.currentSlug = note.slug || "";
   state.currentPublished = note.published !== false;
+  state.references = (note.references || []).map(reference => normalizeReferenceForEditor(reference));
   els.title.value = note.title || "";
   els.date.value = note.date || today();
   els.description.value = note.description || "";
   els.body.value = note.body || "";
   updateLifecycleControls();
+  renderReferences();
+  closeCitationSuggestions();
   hideDeleteConfirmation();
   state.dirty = false;
   renderList();
@@ -1053,6 +1935,7 @@ function newNote() {
     title: "",
     date: today(),
     description: "",
+    references: [],
     body: "## A first section\n\nWrite here. Inline math looks like $x^2$.\n\n$$\n\\Omega(nd)\n$$\n"
   });
   switchMode("write");
@@ -1233,6 +2116,7 @@ function openCurrentPage() {
 function markDirty() {
   state.dirty = true;
   hideDeleteConfirmation();
+  updateReferenceWarnings();
   setStatus("Unsaved changes.");
   schedulePreview();
 }
@@ -1263,9 +2147,61 @@ document.getElementById("quitBtn").addEventListener("click", () => quitEditor().
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => switchMode(tab.dataset.mode));
 });
-[els.title, els.date, els.description, els.body].forEach(input => {
+[els.title, els.date, els.description].forEach(input => {
   input.addEventListener("input", markDirty);
 });
+els.body.addEventListener("input", () => {
+  markDirty();
+  const trigger = currentCitationTrigger();
+  if (trigger) {
+    openCitationSuggestions(trigger);
+  } else {
+    closeCitationSuggestions();
+  }
+});
+els.body.addEventListener("keydown", event => {
+  if (!state.citation.open) return;
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    state.citation.selected = Math.min(state.citation.selected + 1, state.citation.suggestions.length - 1);
+    renderCitationSuggestions();
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    state.citation.selected = Math.max(state.citation.selected - 1, 0);
+    renderCitationSuggestions();
+  } else if ((event.key === "Enter" || event.key === "Tab") && state.citation.suggestions.length) {
+    event.preventDefault();
+    insertCitationSuggestion(state.citation.suggestions[state.citation.selected]);
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    closeCitationSuggestions();
+  }
+});
+els.body.addEventListener("click", () => {
+  const trigger = currentCitationTrigger();
+  if (trigger) {
+    openCitationSuggestions(trigger);
+  } else {
+    closeCitationSuggestions();
+  }
+});
+els.body.addEventListener("blur", () => {
+  window.setTimeout(closeCitationSuggestions, 120);
+});
+els.body.addEventListener("scroll", positionCitationSuggestions);
+els.toggleBibtexBtn.addEventListener("click", () => {
+  els.bibtexPanel.hidden = !els.bibtexPanel.hidden;
+  if (!els.bibtexPanel.hidden) {
+    els.bibtexInput.focus();
+  }
+});
+els.importBibtexBtn.addEventListener("click", importBibtexEntries);
+els.clearBibtexBtn.addEventListener("click", () => {
+  els.bibtexInput.value = "";
+  els.bibtexStatus.textContent = "Paste one entry or many. I will keep the keys and fill the reference list.";
+  els.bibtexInput.focus();
+});
+els.addReferenceBtn.addEventListener("click", addBlankReference);
 
 loadNotes().catch(error => setStatus(error.message));
 </script>
@@ -1335,6 +2271,34 @@ def unique_slug(title: str, notes: list[dict], current_id: str | None = None) ->
     return slug
 
 
+def normalize_reference_key(value: object) -> str:
+    key = str(value or "").strip().lstrip("@")
+    key = re.sub(r"[^A-Za-z0-9:_.-]+", "-", key)
+    return key.strip("-")
+
+
+def normalize_references(raw: object) -> list[dict]:
+    if not isinstance(raw, list):
+        return []
+    references: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        reference = {
+            "key": normalize_reference_key(item.get("key")),
+            "author": str(item.get("author") or "").strip(),
+            "title": str(item.get("title") or "").strip(),
+            "year": str(item.get("year") or "").strip(),
+            "venue": str(item.get("venue") or "").strip(),
+            "doi": str(item.get("doi") or "").strip(),
+            "url": str(item.get("url") or "").strip(),
+            "rawBibtex": str(item.get("rawBibtex") or "").strip(),
+        }
+        if any(reference.values()):
+            references.append(reference)
+    return references
+
+
 def normalize_note(raw: dict, notes: list[dict]) -> dict:
     note_id = str(raw.get("id") or uuid.uuid4().hex)
     existing = next((note for note in notes if note.get("id") == note_id), None)
@@ -1355,6 +2319,7 @@ def normalize_note(raw: dict, notes: list[dict]) -> dict:
         "date": note_date,
         "description": description,
         "body": body,
+        "references": normalize_references(raw.get("references")),
         "created": existing.get("created") if existing else now_iso(),
         "updated": now_iso(),
     }
@@ -1380,7 +2345,54 @@ def protect_inline(text: str) -> tuple[str, dict[str, str]]:
     return text, replacements
 
 
-def render_inline(text: str) -> str:
+def make_citation_context(references: object) -> dict:
+    refs: dict[str, dict] = {}
+    for reference in normalize_references(references):
+        key = reference.get("key") or ""
+        if key and key not in refs:
+            refs[key] = reference
+    return {"refs": refs, "numbers": {}, "order": [], "missing": set()}
+
+
+def parse_citation_items(content: str) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for part in content.split(";"):
+        match = re.match(r"\s*@([A-Za-z0-9:_.-]+)(?:\s*,\s*(.+))?\s*$", part)
+        if match:
+            items.append((match.group(1), (match.group(2) or "").strip()))
+    return items
+
+
+def render_citation(content: str, context: dict | None) -> str:
+    if context is None:
+        return f"[{content}]"
+    items = parse_citation_items(content)
+    if not items:
+        return f"[{content}]"
+
+    pieces: list[str] = []
+    refs = context["refs"]
+    numbers = context["numbers"]
+    order = context["order"]
+    missing = context["missing"]
+
+    for key, locator in items:
+        if key not in refs:
+            missing.add(key)
+            pieces.append(f'<span class="citation-missing">missing @{escape(key)}</span>')
+            continue
+        if key not in numbers:
+            numbers[key] = len(order) + 1
+            order.append(key)
+        label = str(numbers[key])
+        if locator:
+            label = f"{label}, {locator}"
+        pieces.append(f'<a href="#ref-{escape(key)}">{label}</a>')
+
+    return f'<span class="citation">[{("; ".join(pieces))}]</span>'
+
+
+def render_inline(text: str, citation_context: dict | None = None) -> str:
     protected, replacements = protect_inline(text)
     rendered = escape(protected)
 
@@ -1392,6 +2404,11 @@ def render_inline(text: str) -> str:
         return f'<a href="{escape(href)}">{label}</a>'
 
     rendered = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", link_repl, rendered)
+    rendered = re.sub(
+        r"\[((?:@[A-Za-z0-9:_.-]+(?:\s*,\s*[^;@\]]+)?)(?:\s*;\s*@[A-Za-z0-9:_.-]+(?:\s*,\s*[^;@\]]+)?)*)\]",
+        lambda match: render_citation(match.group(1), citation_context),
+        rendered,
+    )
     rendered = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", rendered)
     rendered = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<em>\1</em>", rendered)
 
@@ -1413,7 +2430,7 @@ def is_block_start(line: str) -> bool:
     )
 
 
-def render_markdown(markdown: str) -> str:
+def render_markdown(markdown: str, citation_context: dict | None = None) -> str:
     lines = markdown.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     output: list[str] = []
     i = 0
@@ -1452,7 +2469,7 @@ def render_markdown(markdown: str) -> str:
         heading = re.match(r"^(#{1,3})\s+(.+)$", line)
         if heading:
             level = len(heading.group(1))
-            output.append(f"<h{level}>{render_inline(heading.group(2).strip())}</h{level}>")
+            output.append(f"<h{level}>{render_inline(heading.group(2).strip(), citation_context)}</h{level}>")
             i += 1
             continue
 
@@ -1460,7 +2477,7 @@ def render_markdown(markdown: str) -> str:
             items: list[str] = []
             while i < len(lines) and re.match(r"\s*[-*]\s+", lines[i]):
                 item = re.sub(r"^\s*[-*]\s+", "", lines[i]).strip()
-                items.append(f"<li>{render_inline(item)}</li>")
+                items.append(f"<li>{render_inline(item, citation_context)}</li>")
                 i += 1
             output.append(f"<ul>{''.join(items)}</ul>")
             continue
@@ -1469,7 +2486,7 @@ def render_markdown(markdown: str) -> str:
             items = []
             while i < len(lines) and re.match(r"\s*\d+\.\s+", lines[i]):
                 item = re.sub(r"^\s*\d+\.\s+", "", lines[i]).strip()
-                items.append(f"<li>{render_inline(item)}</li>")
+                items.append(f"<li>{render_inline(item, citation_context)}</li>")
                 i += 1
             output.append(f"<ol>{''.join(items)}</ol>")
             continue
@@ -1479,23 +2496,80 @@ def render_markdown(markdown: str) -> str:
             while i < len(lines) and lines[i].startswith("> "):
                 quote_lines.append(lines[i][2:].strip())
                 i += 1
-            output.append(f"<blockquote>{render_inline(' '.join(quote_lines))}</blockquote>")
+            output.append(f"<blockquote>{render_inline(' '.join(quote_lines), citation_context)}</blockquote>")
             continue
 
         paragraph: list[str] = []
         while i < len(lines) and not is_block_start(lines[i]):
             paragraph.append(lines[i].strip())
             i += 1
-        output.append(f"<p>{render_inline(' '.join(paragraph))}</p>")
+        output.append(f"<p>{render_inline(' '.join(paragraph), citation_context)}</p>")
 
     return "\n".join(output) or '<p class="empty-note">No body yet.</p>'
+
+
+def reference_link(reference: dict) -> tuple[str, str] | None:
+    url = str(reference.get("url") or "").strip()
+    doi = str(reference.get("doi") or "").strip()
+    if url.startswith(("http://", "https://")):
+        return ("Link", url)
+    if doi:
+        href = doi if doi.startswith(("http://", "https://")) else f"https://doi.org/{doi}"
+        return ("DOI", href)
+    return None
+
+
+def render_reference_text(reference: dict) -> str:
+    parts: list[str] = []
+    author = str(reference.get("author") or "").strip()
+    title = str(reference.get("title") or "").strip()
+    venue = str(reference.get("venue") or "").strip()
+    year = str(reference.get("year") or "").strip()
+    if author:
+        parts.append(f"{escape(author)}.")
+    if title:
+        parts.append(f'<span class="reference-title">{escape(title)}</span>.')
+    if venue:
+        parts.append(f"{escape(venue)}.")
+    if year:
+        parts.append(f"{escape(year)}.")
+    link = reference_link(reference)
+    if link:
+        label, href = link
+        parts.append(f'<a class="reference-link" href="{escape(href)}">{escape(label)}</a>.')
+    return " ".join(parts) or escape(reference.get("key") or "Untitled reference")
+
+
+def render_references_section(citation_context: dict) -> str:
+    order = citation_context["order"]
+    refs = citation_context["refs"]
+    if not order:
+        return ""
+    items = []
+    for key in order:
+        reference = refs.get(key)
+        if not reference:
+            continue
+        items.append(f'<li id="ref-{escape(key)}">{render_reference_text(reference)}</li>')
+    if not items:
+        return ""
+    return f"""
+<section class="references-section">
+<h2>References</h2>
+<ol class="references-list">
+{chr(10).join(items)}
+</ol>
+</section>
+""".strip()
 
 
 def render_note_article(note: dict) -> str:
     title = escape(note.get("title") or "Untitled note")
     note_date = escape(note.get("date") or "")
     description = escape(note.get("description") or "")
-    body = render_markdown(note.get("body") or "")
+    citation_context = make_citation_context(note.get("references") or [])
+    body = render_markdown(note.get("body") or "", citation_context)
+    references = render_references_section(citation_context)
     description_html = f'<p class="note-description">{description}</p>' if description else ""
     date_html = f'<span class="note-date">{note_date}</span>' if note_date else ""
     return f"""
@@ -1505,6 +2579,7 @@ def render_note_article(note: dict) -> str:
 {description_html}
 <div class="note-body">
 {body}
+{references}
 </div>
 </article>
 """.strip()
