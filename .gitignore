@@ -4,6 +4,8 @@ notes-data/editor.log
 notes-data/editor.port
 notes-data/notes.json
 notes-data/notes.json.tmp
+Notes_Editor.command
+scripts/notes_editor.py
 scripts/__pycache__/
 __pycache__/
 *.pyc
